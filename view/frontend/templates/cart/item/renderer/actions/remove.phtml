@@ -1,0 +1,11 @@
+<?php if ($block->getItem()->getIsZinreloFreeProduct()) { ?>
+<?php } else { ?>
+    <a href="#"
+       title="<?= $block->escapeHtml(__('Remove item')) ?>"
+       class="action action-delete"
+       data-post='<?= /* @noEscape */ $block->getDeletePostJson() ?>'>
+    <span>
+        <?= $block->escapeHtml(__('Remove item')) ?>
+    </span>
+    </a>
+<?php } ?>

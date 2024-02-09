@@ -1,0 +1,128 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Config:etc/system_file.xsd">
+    <system>
+        <tab id="zinrelo_loyaltyRewards" sortOrder="999" translate="label">
+            <label>Zinrelo Loyalty Rewards</label>
+        </tab>
+        <section id="zinrelo_loyaltyRewards" showInDefault="1" showInStore="1" showInWebsite="1" sortOrder="10" translate="label">
+            <label>Zinrelo Settings</label>
+            <tab>zinrelo_loyaltyRewards</tab>
+            <resource>Zinrelo_LoyaltyRewards::config</resource>
+            <group id="settings" showInDefault="1" showInStore="1" showInWebsite="1" sortOrder="10" translate="label">
+                <label>Settings</label>
+                <field id="loyalty_rewards_active" showInDefault="1" showInStore="0" showInWebsite="1" sortOrder="10" translate="label" type="select">
+                    <label>Enable the loyalty rewards module</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                </field>
+                <field id="partner_id" showInDefault="1" showInStore="0" showInWebsite="1" sortOrder="20" translate="label" type="text">
+                    <label>Add Partner id</label>
+                    <comment>
+                        <![CDATA[
+                            To get <strong>Partner id</strong> refer to <a href="https://help.zinrelo.com/reference/authentication" target="_blank">URL</a>.
+                        ]]>
+                    </comment>
+                    <depends>
+                        <field id="loyalty_rewards_active">1</field>
+                    </depends>
+                    <validate>required-entry</validate>
+                </field>
+                <field id="api_key" showInDefault="1" showInStore="0" showInWebsite="1" sortOrder="30" translate="label" type="text">
+                    <label>Add API Key</label>
+                    <comment>
+                        <![CDATA[
+                            To get <strong>API Key</strong> refer to <a href="https://help.zinrelo.com/reference/authentication" target="_blank">URL</a>.
+                        ]]>
+                    </comment>
+                    <depends>
+                        <field id="loyalty_rewards_active">1</field>
+                    </depends>
+                    <validate>required-entry</validate>
+                </field>
+
+                <field id="web_hook_url" showInDefault="1" showInStore="0" showInWebsite="1" sortOrder="35" translate="label" type="text">
+                    <label>Webhook URL</label>
+                    <depends>
+                        <field id="loyalty_rewards_active">1</field>
+                    </depends>
+                    <validate>required-entry validate-url</validate>
+                </field>
+
+                <field id="product_page_rewards_point_enable" showInDefault="1" showInStore="0" showInWebsite="1" sortOrder="40" translate="label" type="select">
+                    <label>Enable reward points text on product pages</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <depends>
+                        <field id="loyalty_rewards_active">1</field>
+                    </depends>
+                </field>
+
+                <field id="product_page_reward_label" showInDefault="1" showInStore="1" showInWebsite="1" sortOrder="42" translate="label" type="text" canRestore="1">
+                    <label>Reward points text on product pages</label>
+                    <comment>
+                        <![CDATA[
+                            Use <strong>{{EARN_POINTS}}</strong> for showing the value of points that can be earned.
+                        ]]>
+                    </comment>
+                    <validate>required-entry</validate>
+                </field>
+
+                <field id="rewards_event_drop_down_active" showInDefault="1" showInStore="0" showInWebsite="1" sortOrder="43" translate="label" type="select">
+                    <label>Enable in-cart redemption</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <depends>
+                        <field id="loyalty_rewards_active">1</field>
+                    </depends>
+                    <comment> Enable to view loyality rewards redeem points dropdown</comment>
+                </field>
+
+                <field id="cart_page_reward_dropdown_label" showInDefault="1" showInStore="1" showInWebsite="1" sortOrder="44" translate="label" type="text" canRestore="1">
+                    <label>In-cart redemption text</label>
+                    <comment>
+                        <![CDATA[Use <strong>{{AVAILABLE_POINTS}}</strong> for showing the currently available points]]>
+                    </comment>
+                    <validate>required-entry</validate>
+                </field>
+
+                <field id="free_shipping_label" showInDefault="1" showInStore="1" showInWebsite="1" sortOrder="45" translate="label" type="text" canRestore="1">
+                    <label>Free Shipping Reward Label</label>
+                    <validate>required-entry</validate>
+                </field>
+
+                <field id="reward_events" translate="label" type="multiselect" sortOrder="60" showInDefault="1"
+                       showInWebsite="1" showInStore="0">
+                    <label>Reward Events</label>
+                    <source_model>Zinrelo\LoyaltyRewards\Model\System\Config\EventsSelection</source_model>
+                    <comment>Only selected events will be sent to Zinrelo</comment>
+                    <depends>
+                        <field id="loyalty_rewards_active">1</field>
+                    </depends>
+                    <validate>validate-select</validate>
+                </field>
+                <field id="abandoned_cart_time" showInDefault="1" showInStore="0" showInWebsite="1" sortOrder="70" translate="label" type="text" canRestore="1">
+                    <label>Cart session timeout</label>
+                    <comment>
+                        <![CDATA[
+                        In-cart rewards that are not used in this time will be rolled back.
+                        <strong>(Time in minutes)</strong>
+                        ]]>
+                    </comment>
+                    <depends>
+                        <field id="loyalty_rewards_active">1</field>
+                    </depends>
+                    <validate>required-entry validate-digits validate-greater-than-zero</validate>
+                </field>
+                <field id="languages_mapping" showInDefault="1" showInStore="1" showInWebsite="1" sortOrder="49" translate="label" type="text" canRestore="1">
+                    <label>Languages(Locale)</label>
+                    <comment>Value Pass Like : {"fr": "french", "es": "spanish", "hi": "custom language one"}</comment>
+                </field>
+                <field id="enable_log" showInDefault="1" showInStore="0" showInWebsite="1"
+                       sortOrder="50" translate="label" type="select">
+                    <label>Enable Log</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <depends>
+                        <field id="loyalty_rewards_active">1</field>
+                    </depends>
+                </field>
+            </group>
+        </section>
+    </system>
+</config>

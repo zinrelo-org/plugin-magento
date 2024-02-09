@@ -1,0 +1,22 @@
+{
+    "name": "zinrelo/extension",
+    "description": "Zinrelo Reward Point Integration Extension",
+    "type": "magento2-module",
+    "version": "2.0.5",
+    "require": {
+        "php": "~7.2.0||~7.3.0||~7.4.0||~8.0.0||~8.1.0||~8.2.0",
+        "firebase/php-jwt": "*"
+    },
+    "license": [
+        "OSL-3.0",
+        "AFL-3.0"
+    ],
+    "autoload": {
+        "files": [
+            "registration.php"
+        ],
+        "psr-4": {
+            "Zinrelo\\LoyaltyRewards\\": ""
+        }
+    }
+}

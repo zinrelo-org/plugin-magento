@@ -1,0 +1,12 @@
+<?php if ($block->getItem()->getIsZinreloFreeProduct()) { ?>
+    <?php if ($block->isProductVisibleInSiteVisibility()):?>
+    <?php endif ?>
+<?php } else {
+    ?>
+    <a class="action action-edit"
+       href="<?= $block->escapeUrl($block->getConfigureUrl()) ?>"
+       title="<?= $block->escapeHtmlAttr(__('Edit item parameters')) ?>">
+        <span><?= $block->escapeHtml(__('Edit')) ?></span>
+    </a>
+    <?php
+} ?>

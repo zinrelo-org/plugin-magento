@@ -1,0 +1,21 @@
+<?php
+/**
+ * Copyright © Magento, Inc. All rights reserved.
+ * See COPYING.txt for license details.
+ */
+
+use Magento\Wishlist\Block\Cart\Item\Renderer\Actions\MoveToWishlist;
+
+/** @var MoveToWishlist $block */
+?>
+<?php if ($block->getItem()->getIsZinreloFreeProduct()) {
+    return;
+} else { ?>
+    <?php if ($block->isAllowInCart() && $block->isProductVisibleInSiteVisibility()): ?>
+        <a href="#"
+           data-post='<?= /* @noEscape */ $block->getMoveFromCartParams() ?>'
+           class="use-ajax action towishlist action-towishlist">
+            <span><?= $block->escapeHtml(__('Move to Wishlist')) ?></span>
+        </a>
+    <?php endif ?>
+<?php } ?>

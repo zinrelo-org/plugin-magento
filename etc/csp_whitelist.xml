@@ -1,0 +1,12 @@
+<?xml version = "1.0"?>
+<csp_whitelist xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+               xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Csp/etc/csp_whitelist.xsd">
+    <policies>
+        <policy id="script-src">
+            <values>
+                <value id="uniqueId" type="host">https://app.zinrelo.com</value>
+                <value id="uniqueId" type="host">app.zinrelo.com</value>
+            </values>
+        </policy>
+    </policies>
+</csp_whitelist>

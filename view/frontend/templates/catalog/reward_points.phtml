@@ -1,0 +1,12 @@
+<?php
+$viewModel = $block->getData('viewModel');
+if ($viewModel->isPdpPointEnabled()) {
+    $rewardLabel = $viewModel->getRewardLabel();
+    if (str_contains($rewardLabel, "{{EARN_POINTS}}")) {
+        $rewardLabel = str_replace("{{EARN_POINTS}}", "<div data-zrl-product-points></div>", $rewardLabel);
+    } else {
+        $rewardLabel = "<div data-zrl-product-points></div>" . $rewardLabel;
+    }
+    ?>
+    <div class="zinrelo-earn-product-points"> <?= $rewardLabel; /* @noEscape */ ?> </div>
+<?php } ?>

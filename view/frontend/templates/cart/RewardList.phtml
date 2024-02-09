@@ -1,0 +1,117 @@
+<?php
+$quote = $block->helper->getQuote();
+$redeemReward = $quote->getRedeemRewardDiscount();
+$rewardData = $block->helper->getRewardRulesData($quote, $redeemReward);
+
+$customerEmail = $block->helper->getCustomerEmailById($block->getCustomerId());
+$points = $block->getRewardPoints();
+$redeemUrl = $block->getFormAction();
+$redeemRules = $block->getRedeemRules();
+$isEnabled = $block->helper->isRewardDropDownEnable();
+if (($isEnabled && !empty($customerEmail) && $points != "error" && !empty($redeemRules)) ||
+    ($isEnabled && $quote->getRewardRulesData() != "")
+) {
+    $points = ($points == "error") ? 0 : $points;
+    $message = $block->helper->getRewardLabelAtCartPage();
+    if (str_contains($message, "{{AVAILABLE_POINTS}}")) {
+        $message = str_replace("{{AVAILABLE_POINTS}}", "<strong>$points</strong>", $message);
+    } else {
+        $message = "<strong>$points</strong> " . $message;
+    } ?>
+    <div class="reward-point">
+        <div class="redeem-label">
+            <?= /* @noEscape */
+            __(
+                $message
+            ); ?>
+        </div>
+        <div class="reward-list">
+            <?php if (!$block->canCancelRedeem()) { ?>
+                <select class="redeem-reward-selector" name="redeem-reward" id="redeem-reward">
+                    <option value=""> <?= /* @noEscape */ __("Select a reward") ?> </option>
+                    <?php foreach ($redeemRules as $key => $value) { ?>
+                        <option value="<?= /* @noEscape */ $value["reward_id"]; ?>">
+                            <?= /* @noEscape */ __($value["reward_name"]); ?>
+                        </option>
+                    <?php } ?>
+                </select>
+                <input type="submit" class="redeem" value="<?= /* @noEscape */ __("Apply"); ?>"
+                id="redeem" title="<?= /* @noEscape */ __("Apply reward"); ?>">
+            <?php } else { ?>
+                <select class="redeem-reward-selector" name="redeem-reward" id="cancel-reward" disabled>
+                    <option value="<?= /* @noEscape */ $rewardData["reward_id"] ?>" selected>
+                        <?= /* @noEscape */ __($rewardData["reward_name"]); ?>
+                    </option>
+                </select>
+                <input type="submit" class="cancel-redeem" value="<?= /* @noEscape */ __("Cancel"); ?>"
+                id="cancel-redeem" title="<?= /* @noEscape */ __("Cancel reward"); ?>">
+            <?php } ?>
+        </div>
+    </div>
+
+<script>
+    require([
+        'jquery',
+        'Magento_Checkout/js/model/shipping-rate-service',
+        'jquery/ui',
+        'mage/cookies'
+    ], function ($, shippingrateservice) {
+        <?php if (empty($rewardData)) { ?>
+            if ($.mage.cookies.get('zinrelo_shipping_selected')) {
+                $.mage.cookies.clear('zinrelo_shipping_selected');
+            }
+            if ($.mage.cookies.get('local_storage_cache_magento')) {
+                localData = window.localStorage.getItem('mage-cache-storage');
+                localDataDecoded = JSON.parse(localData);
+                if(localDataDecoded['cart-data'] != undefined){
+                    localDataDecoded['cart-data']['totals'] = [];
+                }
+                localDataEncoded = JSON.stringify(localDataDecoded);
+                window.localStorage.setItem('mage-cache-storage', localDataEncoded);
+                $.mage.cookies.clear('local_storage_cache_magento');
+            }
+        <?php } ?>
+        $('#redeem').click(function () {
+            var redeemRewardSelector = jQuery(".redeem-reward-selector").val();
+            if (redeemRewardSelector != "") {
+                $.mage.cookies.set('local_storage_cache_magento', true, {lifetime: 432000});
+                $(".redeem-reward-selector").css("border-color", "#726d6d");
+                $("#redeem-reward").prop('disabled', true);
+                $("#redeem").prop('disabled', true);
+                jQuery('body').trigger('processStart');
+                jQuery.ajax({
+                    url: '<?= /* @noEscape */ $redeemUrl ?>',
+                    dataType: 'json',
+                    data: {'redeem_reward': redeemRewardSelector},
+                    type: 'post',
+                    global:false,
+                    showLoader: false,
+                    success: function (data) {
+                        let result = data;
+                        window.location.reload();
+                    }
+                });
+            } else {
+                $(".redeem-reward-selector").css("border-color", "red");
+            }
+        });
+        $('#cancel-redeem').click(function () {
+            $('#cancel-redeem').attr('disabled', true);
+            jQuery('body').trigger('processStart');
+            jQuery.ajax({
+                url: '<?= /* @noEscape */ $redeemUrl ?>',
+                dataType: 'json',
+                data: {'redeem_reward': 'cancel'},
+                type: 'post',
+                global:false,
+                showLoader: false,
+                success: function (data) {
+                    let result = data;
+                    window.location.reload();
+                }
+            });
+        });
+    });
+</script>
+    <?php
+} ?>

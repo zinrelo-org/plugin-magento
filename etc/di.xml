@@ -1,0 +1,26 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
+    <preference for="Zinrelo\LoyaltyRewards\Api\CustomerAttributeInterface" type="Zinrelo\LoyaltyRewards\Model\Api\CustomerAttribute"/>
+    <preference for="Zinrelo\LoyaltyRewards\Api\CustomerAttributeUpdateInterface" type="Zinrelo\LoyaltyRewards\Model\Api\CustomerAttributeUpdate"/>
+    <preference for="Magento\Checkout\CustomerData\DefaultItem" type="Zinrelo\LoyaltyRewards\Plugin\Checkout\CustomerData\DefaultItem"/>
+    <preference for="Magento\Framework\HTTP\Client\Curl" type="Zinrelo\LoyaltyRewards\Framework\HTTP\Client\Curl"/>
+
+    <type name="Magento\Checkout\Block\Cart\AbstractCart">
+        <plugin name="item-disable-qty" type="Zinrelo\LoyaltyRewards\Plugin\Cart\DisableQty" sortOrder="1"/>
+    </type>
+
+    <!-- Adding log file for Zinrelo log -->
+    <type name="Zinrelo\LoyaltyRewards\Logger\Handler">
+        <arguments>
+            <argument name="filesystem" xsi:type="object">Magento\Framework\Filesystem\Driver\File</argument>
+        </arguments>
+    </type>
+    <type name="Zinrelo\LoyaltyRewards\Logger\Logger">
+        <arguments>
+            <argument name="name" xsi:type="string">zinreloLog</argument>
+            <argument name="handlers"  xsi:type="array">
+                <item name="system" xsi:type="object">Zinrelo\LoyaltyRewards\Logger\Handler</item>
+            </argument>
+        </arguments>
+    </type>
+</config>
