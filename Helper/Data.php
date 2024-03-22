@@ -17,7 +17,7 @@ use Magento\Framework\App\RequestInterface;
 use Magento\Framework\Escaper;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Exception\NoSuchEntityException;
-use Magento\Framework\HTTP\Client\Curl;
+use Magento\Framework\HTTP\Client\CurlFactory;
 use Magento\Framework\Serialize\Serializer\Json;
 use Magento\Framework\Stdlib\DateTime\TimezoneInterface;
 use Magento\Framework\View\Asset\Repository;
@@ -63,7 +63,7 @@ class Data extends AbstractHelper
      */
     protected $customerSession;
     /**
-     * @var Curl
+     * @var CurlFactory
      */
     private $curl;
     /**
@@ -136,7 +136,7 @@ class Data extends AbstractHelper
      *
      * @param Context $context
      * @param ZinreloLogger $logger
-     * @param Curl $curl
+     * @param CurlFactory $curl
      * @param RequestInterface $request
      * @param ProductCategoryList $productCategory
      * @param CustomerRepositoryInterface $customerRepository
@@ -159,7 +159,7 @@ class Data extends AbstractHelper
     public function __construct(
         Context $context,
         ZinreloLogger $logger,
-        Curl $curl,
+        CurlFactory $curl,
         RequestInterface $request,
         ProductCategoryList $productCategory,
         CustomerRepositoryInterface $customerRepository,
@@ -569,17 +569,18 @@ class Data extends AbstractHelper
                 $this->logger->info("Headers: " . json_encode($headers));
                 $this->logger->info("Params: " . $params);
             }
-            $this->curl->setHeaders($headers);
+			$curlRequest = $this->curl->create();
+            $curlRequest->setHeaders($headers);
             if ($requestType == "post") {
-                $this->curl->post($url, $params);
+                $curlRequest->post($url, $params);
             } else {
                 if (!empty($params)) {
-                    $this->curl->get($url, $params);
+                    $curlRequest->get($url, $params);
                 } else {
-                    $this->curl->get($url);
+                    $curlRequest->get($url);
                 }
             }
-            $response = $this->curl->getBody();
+            $response = $curlRequest->getBody();
             if ($this->enableCustomLog()) {
                 $this->logger->info("Response: " . $response);
                 $this->logger->info("==============End===============");
