@@ -29,6 +29,10 @@
         <observer name="customerDeleteAfterZinrelo" instance="Zinrelo\LoyaltyRewards\Observer\CustomerDelete"/>
     </event>
 
+    <event name="paypal_express_place_order_success">
+        <observer name="orderCreateAfterApiZinrelo" instance="Zinrelo\LoyaltyRewards\Observer\CreateOrderAfter" />
+    </event>
+    
     <event name="sales_order_status_history_save_after">
         <observer name="orderUpdateZinrelo" instance="Zinrelo\LoyaltyRewards\Observer\OrderUpdate"/>
     </event>
