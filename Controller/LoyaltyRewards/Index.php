@@ -91,6 +91,7 @@ class Index implements HttpPostActionInterface
     {
         $key = $this->helper->getApiKey();
         $partnerId = $this->helper->getPartnerId();
+        $apiKeyIdentifier = $this->helper->getApiKeyIdentifier();
         $customerEmail = "";
         $customerFirstName = "";
         $customerLastName = "";
@@ -133,6 +134,7 @@ class Index implements HttpPostActionInterface
 
         $payload = [
             'member_id' => $customerEmail,
+            'sub' => $apiKeyIdentifier,
             'email_address' => $customerEmail,
             'first_name' => $customerFirstName,
             'last_name' => $customerLastName,

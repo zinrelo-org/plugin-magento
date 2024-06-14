@@ -40,6 +40,7 @@ class Data extends AbstractHelper
     public const XML_PATH_ABANDONED_CART_TIME = "zinrelo_loyaltyRewards/settings/abandoned_cart_time";
     public const XML_PATH_PARTNER_ID = "zinrelo_loyaltyRewards/settings/partner_id";
     public const XML_PATH_API_KEY = "zinrelo_loyaltyRewards/settings/api_key";
+    public const XML_PATH_API_KEY_IDENTIFIER = "zinrelo_loyaltyRewards/settings/api_key_identifier";
     public const XML_PATH_REWARD_EVENTS = "zinrelo_loyaltyRewards/settings/reward_events";
     public const XML_PATH_REWARDS_DROPDOWN_ACTIVE = "zinrelo_loyaltyRewards/settings/rewards_event_drop_down_active";
     public const XML_PATH_REWARDS_POINTS_AT_PDP = "zinrelo_loyaltyRewards/settings/product_page_rewards_point_enable";
@@ -599,6 +600,16 @@ class Data extends AbstractHelper
     public function getApiKey()
     {
         return $this->getConfig(self::XML_PATH_API_KEY) ?? '';
+    }
+
+    /**
+     * Get Api Key Identifier
+     *
+     * @return mixed
+     */
+    public function getApiKeyIdentifier()
+    {
+        return $this->getConfig(self::XML_PATH_API_KEY_IDENTIFIER) ?? '';
     }
 
     /**

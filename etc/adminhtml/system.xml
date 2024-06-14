@@ -38,6 +38,14 @@
                     </depends>
                     <validate>required-entry</validate>
                 </field>
+                
+                 <field id="api_key_identifier" showInDefault="1" showInStore="0" showInWebsite="1" sortOrder="30" translate="label" type="text">
+                    <label>Add API Key Identifier</label>
+                    <depends>
+                        <field id="loyalty_rewards_active">1</field>
+                    </depends>
+                    <validate>required-entry</validate>
+                </field>
 
                 <field id="web_hook_url" showInDefault="1" showInStore="0" showInWebsite="1" sortOrder="35" translate="label" type="text">
                     <label>Webhook URL</label>
