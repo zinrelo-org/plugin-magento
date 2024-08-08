@@ -8,5 +8,5 @@ if ($viewModel->isPdpPointEnabled()) {
         $rewardLabel = "<div data-zrl-product-points></div>" . $rewardLabel;
     }
     ?>
-    <div class="zinrelo-earn-product-points"> <?= $rewardLabel; /* @noEscape */ ?> </div>
+    <div class="zinrelo-earn-product-points"> <?= /* @noEscape */ $rewardLabel;  ?> </div>
 <?php } ?>

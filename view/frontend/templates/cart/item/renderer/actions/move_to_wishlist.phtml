@@ -7,8 +7,11 @@
 use Magento\Wishlist\Block\Cart\Item\Renderer\Actions\MoveToWishlist;
 
 /** @var MoveToWishlist $block */
+
+$zinreloHelper = $this->helper(Zinrelo\LoyaltyRewards\Helper\Config ::class);
+$zinreloQuoteItem = $zinreloHelper->getZinreloQuoteItemByItemId($block->getItem()->getId());
 ?>
-<?php if ($block->getItem()->getIsZinreloFreeProduct()) {
+<?php if ($zinreloQuoteItem->getIsZinreloFreeProduct()) {
     return;
 } else { ?>
     <?php if ($block->isAllowInCart() && $block->isProductVisibleInSiteVisibility()): ?>

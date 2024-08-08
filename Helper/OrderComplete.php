@@ -1,15 +1,16 @@
 <?php
 
-namespace Zinrelo\LoyaltyRewards\Observer;
+namespace Zinrelo\LoyaltyRewards\Helper;
 
 use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
 use Magento\Framework\Exception\CouldNotSaveException;
+use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Sales\Api\OrderRepositoryInterface;
 use Magento\Sales\Model\OrderFactory;
 use Zinrelo\LoyaltyRewards\Helper\Data;
 
-class OrderComplete implements ObserverInterface
+class OrderComplete extends \Magento\Framework\App\Helper\AbstractHelper
 {
     /**
      * @var Data
@@ -46,22 +47,24 @@ class OrderComplete implements ObserverInterface
     /**
      * Order complete event to zinrelo
      *
-     * @param Observer $observer
+     * @param $order
      * @return bool
-     * @throws CouldNotSaveException
+     * @throws NoSuchEntityException
      */
-    public function execute(Observer $observer)
+    public function getCompletedOrder($order)
     {
         $event = $this->helper->getRewardEvents();
-        $order = $observer->getEvent()->getOrder();
         $orderId = $order->getEntityId();
+        $zinreloOrder = $this->helper->getZinreloOrderByOrderId($orderId);
         if (in_array('order_complete', $event, true) &&
             $order->getState() == 'complete' &&
-            $order->getCompleteRequestSent() == 0
+            $zinreloOrder->getCompleteRequestSent() == 0
         ) {
             $order = $this->orderRepository->get($orderId);
             $order->getPayment()->setMethodInstance();
-            $orderData = $order->debug();
+            $orderData = $order->toArray();
+            $orderData['base_subtotal_invoiced'] = $orderData['base_subtotal'];
+            $orderData['subtotal_invoiced'] = $orderData['subtotal'];
             $orderData = $this->helper->setFormatedPrice($orderData);
             $orderData['payment'] = $order->getPayment()->debug();
             unset($orderData['payment (Magento\Sales\Model\Order\Payment\Interceptor)']);
@@ -69,9 +72,6 @@ class OrderComplete implements ObserverInterface
             $replacedOrderId = $this->helper->getReplacedOrderID($order->getEntityId());
             unset($orderData['items']);
             foreach ($order->getItems() as $item) {
-                if ($item->getParentItemId()) {
-                    continue;
-                }
                 unset($item['product']);
                 $orderItemData = $item->debug();
                 $orderItemData['qty_ordered'] = (int)$orderItemData['qty_ordered'];
@@ -94,11 +94,11 @@ class OrderComplete implements ObserverInterface
                 $orderItemData = $this->helper->setFormatedPrice($orderItemData);
                 $orderItemData['order_id'] = $replacedOrderId;
                 $productId = $orderItemData['product_id'];
-                $orderItemData['product_url'] = $this->helper->getProductUrl($productId);
-                $orderItemData['product_image_url'] = $this->helper->getProductImageUrl($productId);
-                $categoryData = $this->helper->getCategoryData($productId);
-                $orderItemData['category_name'] = $categoryData['name'];
-                $orderItemData['category_ids'] = $categoryData['ids'];
+                /*Product url and product image url not availale from Order item so we have to load product to get an additional required data*/
+                $productInfo = $this->helper->getProductUrlAndImageUrl($productId);
+                $orderItemData['product_url'] = $productInfo['product_url'];
+                $orderItemData['product_image_url'] = $productInfo['product_image_url'];
+                $orderItemData['category_name'] = $this->helper->getCategoryName($productId);
                 $orderData['items'][] = $orderItemData;
             }
             $addressesData = $orderData["addresses"] ?? [];
@@ -119,11 +119,10 @@ class OrderComplete implements ObserverInterface
             $url = $this->helper->getWebHookUrl();
             $params = $this->helper->json->serialize($params);
             $this->helper->request($url, $params, "post");
-            /*Set complete request send to Zinrelo*/
-            $orderModel = $this->orderFactory->create()->load($orderId);
-            $orderModel->setCompleteRequestSent(1);
             try {
-                $orderModel->save();
+                /*Set complete request send to Zinrelo*/
+                $zinreloOrder->setCompleteRequestSent(1);
+                $zinreloOrder->save();
             } catch (CouldNotSaveException $e) {
                 $this->helper->addErrorLog($e->getMessage());
             }

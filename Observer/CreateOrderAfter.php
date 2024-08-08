@@ -60,29 +60,37 @@ class CreateOrderAfter implements ObserverInterface
     public function execute(Observer $observer)
     {
         $event = $this->helper->getRewardEvents();
-        $orderId = $observer->getEvent()->getOrder()->getId();
-        $order = $this->orderRepository->get($orderId);
-        $this->helper->showRedeemRewardDiscountInAdminOrder($order);
-        if (!$order->getZinreloReward()) {
-            if ($order->getQuoteId() !== null) {
-                $quote = $this->quoteRepository->get($order->getQuoteId());
+        if (in_array('order_create', $event, true)) {
+            $orderId = $observer->getEvent()->getOrder()->getId();
+            $order = $this->orderRepository->get($orderId);
+            $zinreloOrder = $this->helper->getZinreloOrderByOrderId($orderId);
+            if (!$zinreloOrder->getZinreloReward()) {
+                if ($order->getQuoteId() !== null) {
+                    $quote = $this->quoteRepository->get($order->getQuoteId());
+                    $zinreloQuote = $this->helper->getZinreloQuoteByQuoteId($order->getQuoteId());
+                }
+                if ($order->getQuoteId() !== null && $zinreloQuote->getRedeemRewardDiscount()) {
+                    $redeemReward = $zinreloQuote->getRedeemRewardDiscount();
+                    $rewardData = $this->helper->getRewardRulesData($quote, $redeemReward);
+                    $url = $this->helper->getLiveWebHookUrl() . "transactions/" . $rewardData['id'] . "/approve";
+                    $this->helper->request($url, "", "post", "live_api");
+                    $zinreloOrder->setZinreloReward($this->serializer->serialize($rewardData))->setOrderId($orderId);
+                } else {
+                    $zinreloOrder->setZinreloReward("{}")->setOrderId($orderId);
+                }
+                $replacedOrderId = $order->getIncrementId();
+                try {
+                    $zinreloOrder->save();
+                } catch (CouldNotSaveException $e) {
+                    $this->helper->addErrorLog($e->getMessage());
+                }
+                $this->helper->createZinreloOrder($orderId, $replacedOrderId);
             }
-            if ($order->getQuoteId() !== null && $quote->getRedeemRewardDiscount()) {
-                $redeemReward = $quote->getRedeemRewardDiscount();
-                $rewardData = $this->helper->getRewardRulesData($quote, $redeemReward);
-                $url = $this->helper->getLiveWebHookUrl() . "transactions/" . $rewardData['id'] . "/approve";
-                $this->helper->request($url, "", "post", "live_api");
-                $order->setZinreloReward($this->serializer->serialize($rewardData));
-            } else {
-                $order->setZinreloReward("{}");
-            }
-            $replacedOrderId = $order->getIncrementId();
-            try {
-                $order->save();
-            } catch (CouldNotSaveException $e) {
-                $this->helper->addErrorLog($e->getMessage());
-            }
-            $this->helper->createZinreloOrder($orderId, $replacedOrderId);
-        }
+        } else {
+	    $orderId = $observer->getEvent()->getOrder()->getId();
+	    $zinreloOrder = $this->helper->getZinreloOrderByOrderId($orderId);
+            $zinreloOrder->setZinreloReward("{}")->setOrderId($orderId);
+            $zinreloOrder->save();
+	}
     }
 }

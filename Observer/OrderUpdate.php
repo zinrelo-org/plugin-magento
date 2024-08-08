@@ -50,7 +50,7 @@ class OrderUpdate implements ObserverInterface
     }
 
     /**
-     * Order Update  event to zinrelo
+     * Send order update event to zinrelo
      *
      * @param Observer $observer
      * @return bool|void
@@ -61,16 +61,18 @@ class OrderUpdate implements ObserverInterface
         if (isset($this->request->getParam('history')['comment'])) {
             $id = $this->request->getParam('order_id') ?? $this->restRequest->getParam('id');
             $event = $this->helper->getRewardEvents();
+            /*Check the order_update event is enabled, if enabled then will send order_update event to Zinrelo*/
             if (in_array('order_update', $event)) {
                 $order = $this->orderRepository->get($id);
                 $order->getPayment()->setMethodInstance();
                 $orderData = $order->debug();
+                /*Get order price formated data*/
                 $orderData = $this->helper->setFormatedPrice($orderData);
                 $orderData['payment'] = $order->getPayment()->debug();
+                /*Remove unwanted payment object data from Order Data*/
                 unset($orderData['payment (Magento\Sales\Model\Order\Payment\Interceptor)']);
-
+                /*Get payment price formated data*/
                 $orderData['payment'] = $this->helper->setFormatedPrice($orderData['payment']);
-
                 $orderData['last_comment'] = $this->request->getParam('history')['comment'];
                 $replacedOrderId = $this->helper->getReplacedOrderID($order->getEntityId());
                 $orderData["entity_id"] = $replacedOrderId;
@@ -78,9 +80,6 @@ class OrderUpdate implements ObserverInterface
                 $orderData["coupon_code"] = $this->helper->getCouponCodes($order);
                 unset($orderData['items']);
                 foreach ($order->getItems() as $item) {
-                    if ($item->getParentItemId()) {
-                        continue;
-                    }
                     $orderItemData = $item->debug();
                     $orderItemData['qty_ordered'] = (int) $orderItemData['qty_ordered'];
                     if (isset($orderItemData['qty_canceled'])) {
@@ -95,19 +94,16 @@ class OrderUpdate implements ObserverInterface
                     if (isset($orderItemData['qty_shipped'])) {
                         $orderItemData['qty_shipped'] = (int) $orderItemData['qty_shipped'];
                     }
-
                     $orderItemData = $this->helper->setFormatedPrice($orderItemData);
-
                     $orderItemData['order_id'] = $replacedOrderId;
                     $productId = $orderItemData['product_id'];
-                    $orderItemData['product_url'] = $this->helper->getProductUrl($productId);
-                    $orderItemData['product_image_url'] = $this->helper->getProductImageUrl($productId);
-                    $categoryData = $this->helper->getCategoryData($productId);
-                    $orderItemData['category_name'] = $categoryData['name'];
-                    $orderItemData['category_ids'] = $categoryData['ids'];
+                    /*Product url and product image url not availale from order item so we have to load product to get an additional required data*/
+                    $productInfo = $this->helper->getProductUrlAndImageUrl($productId);
+                    $orderItemData['product_url'] = $productInfo['product_url'];
+                    $orderItemData['product_image_url'] = $productInfo['product_image_url'];
+                    $orderItemData['category_name'] = $this->helper->getCategoryName($productId);
                     $orderData['items'][] = $orderItemData;
                 }
-
                 if (isset($orderData["addresses"])) {
                     $addressesData = $orderData["addresses"];
                     unset($orderData["addresses"]);

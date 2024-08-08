@@ -103,6 +103,7 @@ class Index implements HttpPostActionInterface
         $country = "";
         $telephone = "";
         $lang = "";
+        $isSetCookies = false;
 
         $jsonConfigLanguage = $this->helper->getConfigLanguage();
         if ($jsonConfigLanguage) {
@@ -154,11 +155,16 @@ class Index implements HttpPostActionInterface
 
         $data = $this->jwt->encode($payload, $key, 'HS256');
         $resultJson = $this->resultFactory->create(ResultFactory::TYPE_JSON);
+        if ($customerEmail) {
+            $this->helper->setCookie($data);
+            $isSetCookies = true;
+        }
         $resultJson->setData(
             [
-                'tokenData' =>$data,
-                'payload' =>$payload,
-                'partnerId' => $partnerId
+                'tokenData' => $data,
+                'payload' => $payload,
+                'partnerId' => $partnerId,
+                'isSetCookies' => $isSetCookies
             ]
         );
         return $resultJson;

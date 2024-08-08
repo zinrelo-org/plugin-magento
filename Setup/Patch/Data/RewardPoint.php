@@ -10,6 +10,7 @@ use Magento\Framework\Exception\AlreadyExistsException;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Setup\ModuleDataSetupInterface;
 use Magento\Framework\Setup\Patch\DataPatchInterface;
+use Zinrelo\LoyaltyRewards\Helper\Data;
 
 class RewardPoint implements DataPatchInterface
 {
@@ -21,16 +22,18 @@ class RewardPoint implements DataPatchInterface
      * @var EavSetupFactory
      */
     private $eavSetupFactory;
-
     /**
      * @var Config
      */
     private $eavConfig;
-
     /**
      * @var Attribute
      */
     private $attributeResource;
+    /**
+     * @var Data
+     */
+    private $helper;
 
     /**
      * RewardPoint Constructor
@@ -39,17 +42,20 @@ class RewardPoint implements DataPatchInterface
      * @param Config $eavConfig
      * @param Attribute $attributeResource
      * @param ModuleDataSetupInterface $moduleDataSetup
+     * @param Data $helper
      */
     public function __construct(
         EavSetupFactory $eavSetupFactory,
         Config $eavConfig,
         Attribute $attributeResource,
-        ModuleDataSetupInterface $moduleDataSetup
+        ModuleDataSetupInterface $moduleDataSetup,
+        Data $helper
     ) {
         $this->eavSetupFactory = $eavSetupFactory;
         $this->eavConfig = $eavConfig;
         $this->attributeResource = $attributeResource;
         $this->moduleDataSetup = $moduleDataSetup;
+        $this->helper = $helper;
     }
 
     /**
@@ -95,13 +101,16 @@ class RewardPoint implements DataPatchInterface
             $attributeSetId = $eavSetup->getDefaultAttributeSetId(Customer::ENTITY);
             $attributeGroupId = $eavSetup->getDefaultAttributeGroupId(Customer::ENTITY);
             $attribute = $this->eavConfig->getAttribute(Customer::ENTITY, $attributeCode);
-            $attribute->setIsZinreloAttribute(1);
             $attribute->setData('attribute_set_id', $attributeSetId);
             $attribute->setData('attribute_group_id', $attributeGroupId);
             $attribute->setData('used_in_forms', [
                 'adminhtml_customer'
             ]);
             $this->attributeResource->save($attribute);
+            /*Set attribute as Zinrelo*/
+            $attributeId = $this->helper->getCustomerAttributeId($attributeCode);
+            $eavAttribute = $this->helper->getZinreloAttributeByAttributeId($attributeId);
+            $eavAttribute->setAttributeId($attributeId)->setIsZinreloAttribute(1)->save();
         }
         $this->moduleDataSetup->getConnection()->endSetup();
     }

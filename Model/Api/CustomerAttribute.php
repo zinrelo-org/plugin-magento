@@ -71,8 +71,6 @@ class CustomerAttribute
         $attributes = $this->request->getBodyParams();
         $requestedApiKey = $this->request->getHeader('api-key');
         $requestedPartnerId = $this->request->getHeader('partner-id');
-        $configuredApiKey = $this->helper->getApiKey();
-        $configuredPartnerId = $this->helper->getPartnerId();
         $response = [];
         if (!$this->helper->isModuleEnabled()) {
             $response[] = [
@@ -81,7 +79,8 @@ class CustomerAttribute
                         __('Enable module from: Stores → Configuration →Zinrelo Loyalty Rewards → Zinrelo Settings.')
                     ];
             return $response;
-        } elseif (($requestedApiKey != $configuredApiKey) || ($requestedPartnerId != $configuredPartnerId)) {
+        /*Check header api-key and partner-id with configured auth key*/
+        } elseif (!$this->helper->isValidateApiAuth($requestedApiKey, $requestedPartnerId)) {
             $response[] = [
                         'status' => false,
                         'message' => __('An invalid request data passed. Kindly check auth header data and try again.')
@@ -109,13 +108,17 @@ class CustomerAttribute
                     $attributeSetId = $eavSetup->getDefaultAttributeSetId(Customer::ENTITY);
                     $attributeGroupId = $eavSetup->getDefaultAttributeGroupId(Customer::ENTITY);
                     $attribute = $this->eavConfig->getAttribute(Customer::ENTITY, $customerAttribute['attribute_code']);
-                    $attribute->setIsZinreloAttribute(1);
                     $attribute->setData('attribute_set_id', $attributeSetId);
                     $attribute->setData('attribute_group_id', $attributeGroupId);
                     $attribute->setData('used_in_forms', [
                         'adminhtml_customer'
                     ]);
                     $this->attributeResource->save($attribute);
+                    /*Set attribute as Zinrelo*/
+                    $attributeId = $this->helper->getCustomerAttributeId($customerAttribute['attribute_code']);
+                    $eavAttribute = $this->helper->getZinreloAttributeByAttributeId($attributeId);
+                    $eavAttribute->setAttributeId($attributeId)->setIsZinreloAttribute(1)->save();
+                    /*End*/
                     $response[] = [
                         'status' => true,
                         'message' => $attribute['frontend_label'] . " " . __('Attribute created successfully.')

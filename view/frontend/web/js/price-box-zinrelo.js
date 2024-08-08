@@ -11,8 +11,9 @@ define([
     'Magento_Catalog/js/price-utils',
     'underscore',
     'mage/template',
+    'priceUtils',
     'jquery/ui'
-], function ($, utils, _, mageTemplate) {
+], function ($, utils, _, mageTemplate, priceUtils) {
     'use strict';
 
     var globalOptions = {
@@ -225,6 +226,22 @@ define([
                 this.options.prices = config.prices;
             }
         }
+    });
+
+    $(document).ready(function () {
+        $('#qty').on('change', function () {
+            var finalPriceElement = $('.product-info-price .price');
+            var formattedFinalPrice = priceUtils.formatPrice(finalPriceElement.text());
+            var rawFinalPrice = parseFloat(finalPriceElement.text().replace(/[^\d.-]/g, ''));
+            var qty = $(this).val();
+
+            zrl_mi.price_identifier = function () {
+                var product = {};
+                product['price'] = rawFinalPrice * qty;
+                return product;
+            }
+            zrl_mi.replace_product_page_potential();
+        });
     });
 
     return $.mage.priceBox;

@@ -1,7 +1,6 @@
 <?php
 namespace Zinrelo\LoyaltyRewards\Observer;
 
-use Magento\Framework\App\Request\Http;
 use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
 use Magento\Framework\Exception\CouldNotSaveException;
@@ -10,8 +9,6 @@ use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Review\Model\Review;
 use Magento\Review\Model\ReviewFactory;
 use Zinrelo\LoyaltyRewards\Helper\Data;
-use Magento\Store\Model\StoreManagerInterface;
-use Magento\Catalog\Api\ProductRepositoryInterface;
 
 class ProductReviewSaveAfter implements ObserverInterface
 {
@@ -20,42 +17,21 @@ class ProductReviewSaveAfter implements ObserverInterface
      */
     private $helper;
     /**
-     * @var Http
-     */
-    private $request;
-    /**
      * @var ReviewFactory
      */
     private $reviewFactory;
-    /**
-     * @var ProductRepositoryInterface
-     */
-    private $productRepository;
-    /**
-     * @var StoreManagerInterface
-     */
-    private $storeManager;
 
     /**
      * Product review constructor.
      *
      * @param Data $helper
-     * @param ProductRepositoryInterface $productRepository
      * @param ReviewFactory $reviewFactory
-     * @param StoreManagerInterface $storeManager
-     * @param Http $request
      */
     public function __construct(
         Data $helper,
-        ProductRepositoryInterface $productRepository,
-        ReviewFactory $reviewFactory,
-        StoreManagerInterface $storeManager,
-        Http $request
+        ReviewFactory $reviewFactory
     ) {
         $this->helper = $helper;
-        $this->request = $request;
-        $this->storeManager = $storeManager;
-        $this->productRepository = $productRepository;
         $this->reviewFactory = $reviewFactory;
     }
 
@@ -77,16 +53,16 @@ class ProductReviewSaveAfter implements ObserverInterface
         $statusId = $review["status_id"];
         $review = $this->reviewFactory->create()->load($reviewId);
         $reviewData = $review->toArray();
+        $zinreloReview = $this->helper->getZinreloReviewByReviewId($reviewId);
         if ($statusId == Review::STATUS_APPROVED && in_array('review_approved', $event, true)) {
             $this->sendRequest($reviewData, $productId, $customerId, "review_approved");
         } elseif ($statusId == Review::STATUS_PENDING &&
             in_array('review_submitted', $event, true) &&
-            !$reviewData['submitted_to_zinrelo']
+            !$zinreloReview->getSubmittedToZinrelo()
         ) {
             $this->sendRequest($reviewData, $productId, $customerId, "review_submitted");
             try {
-                $review->setSubmittedToZinrelo(1);
-                $review->save();
+                $zinreloReview->setSubmittedToZinrelo(1)->setReviewId($reviewId)->save();
             } catch (CouldNotSaveException $e) {
                 $this->helper->addErrorLog($e->getMessage());
             }
@@ -107,11 +83,11 @@ class ProductReviewSaveAfter implements ObserverInterface
      */
     public function sendRequest($reviewData, $productId, $customerId, $activityId): bool
     {
-        $reviewData['product_url'] = $this->helper->getProductUrl($productId);
-        $reviewData['product_image_url'] = $this->helper->getProductImageUrl($productId);
-        $categoryData = $this->helper->getCategoryData($productId);
-        $reviewData['category_name'] = $categoryData['name'];
-        $reviewData['category_ids'] = $categoryData['ids'];
+        /*Product url and product image url not availale from Review so we have to load product to get an additional required data*/
+        $productInfo = $this->helper->getProductUrlAndImageUrl($productId);
+        $reviewData['product_url'] = $productInfo['product_url'];
+        $reviewData['product_image_url'] = $productInfo['product_image_url'];
+        $reviewData['category_name'] = $this->helper->getCategoryName($productId);
         $params = [
             "member_id" => $this->helper->getCustomerEmailById($customerId),
             "activity_id" => $activityId,
