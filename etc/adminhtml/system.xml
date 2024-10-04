@@ -44,7 +44,6 @@
                     <depends>
                         <field id="loyalty_rewards_active">1</field>
                     </depends>
-                    <validate>required-entry</validate>
                 </field>
 
                 <field id="web_hook_url" showInDefault="1" showInStore="0" showInWebsite="1" sortOrder="35" translate="label" type="text">
