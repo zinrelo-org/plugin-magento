@@ -1,4 +1,0 @@
-
-i	php:S3776<"TRefactor this function to reduce its Cognitive Complexity from 27 to the 15 allowed.(Ü¸Éù
-f	php:S1192K"LDefine a constant instead of duplicating this literal "Y-m-d H:i:s" 3 times.(åÀššûÿÿÿÿ
-C	php:S1481j")Remove this unused "$key" local variable.(›íî€øÿÿÿÿ

@@ -1,7 +1,0 @@
-
-bphp:S107 "HThis function has 21 parameters, which is greater than the 7 authorized.(“ ‘Äþÿÿÿÿ
-j	php:S3776½"TRefactor this function to reduce its Cognitive Complexity from 30 to the 15 allowed.(ì•¦€
-D	php:S1481“")Remove this unused "$key" local variable.(Ñ·Œ…ûÿÿÿÿ
-D	php:S1481¨".Remove this unused "$response" local variable.(Û˜¤‘
-z	php:S1448#"`Class "Data" has 41 methods, which is greater than 20 authorized. Split it into smaller classes.(šèî¥ùÿÿÿÿ
-E	php:S1066Ž"/Merge this if statement with the enclosing one.(ÁØÀ‰
