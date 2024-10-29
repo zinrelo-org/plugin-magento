@@ -258,11 +258,11 @@ define([
                     element.innerText = potential_points;
                 }
             zrl_mi.get_potential_points([{
-                "product_id" : jQuery('.price-box.price-final_price').attr('data-product-id'),
-                "price": rawFinalPrice, 
-                "quantity": qty, 
+                "product_id" : jQuery('input[name="product"]').val(),
+                "price": rawFinalPrice,
+                "quantity": qty,
                 "category": ''
-             }]); 
+             }]);
             // zrl_mi.price_identifier = function () {
             //     var product = {};
             //     product['price'] = rawFinalPrice * qty;
