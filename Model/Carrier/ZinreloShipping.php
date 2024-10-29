@@ -94,8 +94,7 @@ class ZinreloShipping extends AbstractCarrier implements CarrierInterface
     public function collectRates(RateRequest $request)
     {
         $quote = $this->checkoutSession->getQuote();
-        $redeemReward = $quote->getRedeemRewardDiscount();
-        $rewardData = $this->helper->getRewardRulesData($quote, $redeemReward);
+        $rewardData = $this->helper->getRewardRulesData($quote);
         $result = $this->rateResultFactory->create();
         if (!empty($rewardData) && $rewardData["rule"] == 'free_shipping') {
             $method = $this->rateMethodFactory->create();

@@ -4,6 +4,7 @@ namespace Zinrelo\LoyaltyRewards\Plugin\Cart;
 
 use Magento\Checkout\Block\Cart\AbstractCart;
 use Magento\Checkout\Model\Session as CheckoutSession;
+use Zinrelo\LoyaltyRewards\Helper\Config as ZinreloHelper;
 
 class DisableQty
 {
@@ -11,16 +12,23 @@ class DisableQty
      * @var CheckoutSession
      */
     private $checkoutSession;
+    /**
+     * @var ZinreloHelper
+     */
+    private $zinreloHelper;
 
     /**
      * Disable Qty for Free product
      *
      * @param CheckoutSession $checkoutSession
+     * @param ZinreloHelper $zinreloHelper
      */
     public function __construct(
-        CheckoutSession $checkoutSession
+        CheckoutSession $checkoutSession,
+        ZinreloHelper $zinreloHelper
     ) {
         $this->checkoutSession = $checkoutSession;
+        $this->zinreloHelper = $zinreloHelper;
     }
 
     /**
@@ -36,7 +44,8 @@ class DisableQty
         $quote = $this->checkoutSession->getQuote();
         $items = $quote->getAllItems();
         foreach ($items as $item) {
-            if ($item->getIsZinreloFreeProduct()) {
+            $zinreloQuoteItem = $this->zinreloHelper->getZinreloQuoteItemByItemId($item->getId());
+            if ($zinreloQuoteItem->getIsZinreloFreeProduct()) {
                 $isFreeProduct = true;
             }
         }

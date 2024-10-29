@@ -11,6 +11,7 @@ use Magento\Framework\Webapi\Rest\Request as RestRequest;
 use Magento\Sales\Api\InvoiceRepositoryInterface;
 use Magento\Sales\Model\OrderFactory;
 use Zinrelo\LoyaltyRewards\Helper\Data;
+use Zinrelo\LoyaltyRewards\Helper\OrderComplete;
 
 class OrderFullInvoicePaid implements ObserverInterface
 {
@@ -38,11 +39,16 @@ class OrderFullInvoicePaid implements ObserverInterface
      * @var RestRequest
      */
     private $restRequest;
+    /**
+     * @var OrderComplete
+     */
+    private $orderCompleteHelper;
 
     /**
      * OrderFullInvoicePaid constructor.
      *
      * @param Data $helper
+     * @param OrderComplete $orderCompleteHelper
      * @param Http $request
      * @param OrderFactory $orderFactory
      * @param InvoiceRepositoryInterface $invoiceRepository
@@ -51,6 +57,7 @@ class OrderFullInvoicePaid implements ObserverInterface
      */
     public function __construct(
         Data $helper,
+        OrderComplete $orderCompleteHelper,
         Http $request,
         OrderFactory $orderFactory,
         InvoiceRepositoryInterface $invoiceRepository,
@@ -63,10 +70,11 @@ class OrderFullInvoicePaid implements ObserverInterface
         $this->invoiceRepository = $invoiceRepository;
         $this->searchCriteriaBuilder = $searchCriteriaBuilder;
         $this->restRequest = $restRequest;
+        $this->orderCompleteHelper = $orderCompleteHelper;
     }
 
     /**
-     * Order complete event to zinrelo
+     * Send order paid event to zinrelo
      *
      * @param Observer $observer
      * @return bool
@@ -74,14 +82,13 @@ class OrderFullInvoicePaid implements ObserverInterface
     public function execute(Observer $observer)
     {
         $event = $this->helper->getRewardEvents();
-        if (in_array('order_paid', $event, true)) {
-            $orderId = $this->request->getParam('order_id');
-            if (empty($orderId)) {
-                $orderId = $this->restRequest->getParam('orderId');
-            }
-            $order = $this->orderFactory->create()->load($orderId);
+        $orderId = $this->request->getParam('order_id') ?? $this->restRequest->getParam('orderId');
+        $order = $this->orderFactory->create()->load($orderId);
+        if (in_array('order_paid', $event, true) && !$order->canInvoice()) {
             $this->orderFullInvoiceData($order, $orderId);
         }
+        $this->orderCompleteHelper->getCompletedOrder($order);
+        return true;
     }
 
     /**
@@ -93,51 +100,46 @@ class OrderFullInvoicePaid implements ObserverInterface
      */
     public function orderFullInvoiceData($order, $orderId)
     {
-        if (!$order->canInvoice()) {
-            try {
-                $searchCriteria = $this->searchCriteriaBuilder->addFilter('order_id', $orderId)->create();
-                $invoices = $this->invoiceRepository->getList($searchCriteria);
-                $invoicesItems = $invoices->toArray();
-                $couponCode = $this->helper->getCouponCodes($order);
-                $replacedOrderId = $this->helper->getReplacedOrderID($orderId);
-                foreach ($invoicesItems["items"] as $key => $invoiceItem) {
-                    $invoicesItems["items"][$key] = $this->helper->setFormatedPrice($invoicesItems["items"][$key]);
-                    $invoicesItems["items"][$key]['total_qty'] = (int)$invoicesItems["items"][$key]['total_qty'];
-                    $invoicesItems["items"][$key]["order_id"] = $replacedOrderId;
-                    $invoiceData = $this->invoiceRepository->get($invoiceItem["entity_id"]);
-                    foreach ($invoiceData->getItems() as $item) {
-                        if ($item->getOrderItem()->getParentItem()) {
-                            continue;
-                        }
-                        unset($item['invoice']);
-                        $invoiceItemData = $item->debug();
-                        $invoiceItemData['qty'] = (int)$invoiceItemData['qty'];
-                        $invoiceItemData = $this->helper->setFormatedPrice($invoiceItemData);
-                        $productId = $invoiceItemData['product_id'];
-                        $invoiceItemData['product_url'] = $this->helper->getProductUrl($productId);
-                        $invoiceItemData['product_image_url'] = $this->helper->getProductImageUrl($productId);
-                        $categoryData = $this->helper->getCategoryData($productId);
-                        $invoiceItemData['category_name'] = $categoryData['name'];
-                        $invoiceItemData['category_ids'] = $categoryData['ids'];
-                        $invoicesItems["items"][$key]['items'][] = $invoiceItemData;
-                    }
+        try {
+            $searchCriteria = $this->searchCriteriaBuilder->addFilter('order_id', $orderId)->create();
+            $invoices = $this->invoiceRepository->getList($searchCriteria);
+            $invoicesItems = $invoices->toArray();
+            $couponCode = $this->helper->getCouponCodes($order);
+            $replacedOrderId = $this->helper->getReplacedOrderID($orderId);
+            foreach ($invoicesItems["items"] as $key => $invoiceItem) {
+                $invoicesItems["items"][$key] = $this->helper->setFormatedPrice($invoicesItems["items"][$key]);
+                $invoicesItems["items"][$key]['total_qty'] = (int) $invoicesItems["items"][$key]['total_qty'];
+                $invoicesItems["items"][$key]["order_id"] = $replacedOrderId;
+                /*To get full item data we have to load repository invoice item data*/
+                $invoiceData = $this->invoiceRepository->get($invoiceItem["entity_id"]);
+                foreach ($invoiceData->getItems() as $item) {
+                    unset($item['invoice']);
+                    $invoiceItemData = $item->debug();
+                    $invoiceItemData['qty'] = (int) $invoiceItemData['qty'];
+                    $invoiceItemData = $this->helper->setFormatedPrice($invoiceItemData);
+                    $productId = $invoiceItemData['product_id'];
+                    /*Product url and product image url not availale from Invoice item so we have to load product to get an additional required data*/
+                    $productInfo = $this->helper->getProductUrlAndImageUrl($productId);
+                    $invoiceItemData['product_url'] = $productInfo['product_url'];
+                    $invoiceItemData['product_image_url'] = $productInfo['product_image_url'];
+                    $invoiceItemData['category_name'] = $this->helper->getCategoryName($productId);
+                    $invoicesItems["items"][$key]['items'][] = $invoiceItemData;
                 }
-                $invoicesItems['coupon_code'] = $couponCode;
-                $invoicesItems['order_id'] = $replacedOrderId;
-                $params = [
-                    "member_id" => $order->getCustomerEmail(),
-                    "activity_id" => "order_paid",
-                    "data" => $invoicesItems
-                ];
-                $url = $this->helper->getWebHookUrl();
-                $params = $this->helper->json->serialize($params);
-                $this->helper->request($url, $params, "post");
-                /* Earn reward on order full paid */
-                /*$this->helper->orderPurchaseRequest($order, $replacedOrderId);*/
-                return true;
-            } catch (Exception $e) {
-                return false;
             }
+            $invoicesItems['coupon_code'] = $couponCode;
+            $invoicesItems['order_id'] = $replacedOrderId;
+            $params = [
+                "member_id" => $order->getCustomerEmail(),
+                "activity_id" => "order_paid",
+                "data" => $invoicesItems
+            ];
+            $url = $this->helper->getWebHookUrl();
+            $params = $this->helper->json->serialize($params);
+            $this->helper->request($url, $params, "post");
+            return true;
+        } catch (Exception $e) {
+            $this->helper->logger->critical($e->getMessage());
+            return false;
         }
     }
 }

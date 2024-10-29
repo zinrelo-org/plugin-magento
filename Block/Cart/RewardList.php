@@ -2,16 +2,15 @@
 
 namespace Zinrelo\LoyaltyRewards\Block\Cart;
 
-use Magento\Checkout\Model\Session as CheckoutSession;
 use Magento\Customer\Model\Session as CustomerSession;
 use Magento\Framework\View\Element\Template;
-use Zinrelo\LoyaltyRewards\Helper\Data;
+use Zinrelo\LoyaltyRewards\Helper\Reward;
 use Zinrelo\LoyaltyRewards\Logger\Logger as ZinreloLogger;
 
 class RewardList extends Template
 {
     /**
-     * @var Data
+     * @var Reward
      */
     public $helper;
 
@@ -24,32 +23,25 @@ class RewardList extends Template
      * @var CustomerSession
      */
     private $customerSession;
-    /**
-     * @var CheckoutSession
-     */
-    private $checkoutSession;
 
     /**
      * RewardList constructor.
      *
      * @param Template\Context $context
-     * @param Data $helper
+     * @param Reward $helper
      * @param CustomerSession $customerSession
-     * @param CheckoutSession $checkoutSession
      * @param ZinreloLogger $logger
      * @param array $data
      */
     public function __construct(
         Template\Context $context,
-        Data $helper,
+        Reward $helper,
         CustomerSession $customerSession,
-        CheckoutSession $checkoutSession,
         ZinreloLogger $logger,
         array $data = []
     ) {
         $this->logger = $logger;
         $this->customerSession = $customerSession;
-        $this->checkoutSession = $checkoutSession;
         $this->helper = $helper;
         parent::__construct(
             $context,
@@ -75,7 +67,8 @@ class RewardList extends Template
     public function canCancelRedeem()
     {
         $quote = $this->helper->getQuote();
-        if (!empty($quote->getRewardRulesData() && !empty($quote->getRedeemRewardDiscount()))) {
+        $zinreloQuote = $this->helper->getZinreloQuoteByQuoteId($quote->getId());
+        if (!empty($zinreloQuote->getRewardRulesData() && !empty($zinreloQuote->getRedeemRewardDiscount()))) {
             return true;
         }
         return false;
@@ -86,38 +79,10 @@ class RewardList extends Template
      *
      * @return mixed
      */
+
     public function getRewardPoints()
     {
-        try {
-            $customerId = $this->customerSession->getCustomer()->getId();
-            $customerEmail = $this->helper->getCustomerEmailById($customerId);
-            $url = $this->helper->getLiveWebHookUrl() . "members/" . $customerEmail;
-            $url = $this->helper->getIdParam($url);
-            $response = $this->helper->request($url, "", "get", "live_api");
-            if ($response) {
-                if ($response["success"] && !empty($response["result"]["data"]["available_points"])) {
-                    $point = $response["result"]["data"]["available_points"];
-                    return $point > 0 ? $point : "error";
-                } else {
-                    return "error";
-                }
-            }
-        } catch (Exception $e) {
-            if ($this->helper->enableCustomLog()) {
-                $this->logger->critical($e->getMessage());
-            }
-            return "error";
-        }
-    }
-
-    /**
-     * Get Customer Id
-     *
-     * @return mixed
-     */
-    public function getCustomerId()
-    {
-        return $this->customerSession->getCustomer()->getId();
+        return $this->helper->getRewardPoints();
     }
 
     /**
@@ -127,55 +92,28 @@ class RewardList extends Template
      */
     public function getRedeemRules()
     {
-        $customerId = $this->customerSession->getCustomer()->getId();
-        $customerEmail = $this->helper->getCustomerEmailById($customerId);
-        $url = $this->helper->getLiveWebHookUrl() . "members/" . $customerEmail . "/rewards";
-        $url = $this->helper->getIdParam($url);
-        $response = $this->helper->request($url, "", "get", "live_api");
-        $rewardRules = [];
-        if ($response && $response["success"] && !empty($response["result"]["data"]["rewards"])) {
-            $rules = $response["result"]["data"]["rewards"];
-            $rewardTypes = $this->getDefaultRewardTypes();
-            $availablePoint = $this->getRewardPoints();
-            $quote = $this->helper->getQuote();
-            $subTotal = $quote->getSubtotal();
-            foreach ($rules as $rule) {
-                if (($rule['reward_sub_type'] == 'Fixed Amount Discount' && $rule['reward_value'] > $subTotal) ||
-                    $availablePoint < $rule['points_to_be_redeemed']
-                ) {
-                    continue;
-                }
-                if (in_array($rule["reward_sub_type"], array_values($rewardTypes), true)) {
-                    foreach ($rewardTypes as $key => $value) {
-                        if ($rule["reward_sub_type"] == $value) {
-                            $rewardRules[$rule["reward_id"]] = [
-                                "rule" => $key,
-                                "reward_id" => $rule["reward_id"],
-                                "id" => '',
-                                "reward_name" => $rule["reward_name"],
-                                "reward_value" => !empty($rule["reward_value"]) ? $rule["reward_value"] : "",
-                                "product_id" => isset($rule["product_id"]) ? $rule["product_id"] : ""
-                            ];
-                        }
-                    }
-                }
-            }
-        }
-        return $rewardRules;
+        return $this->helper->getRedeemRules();
     }
 
     /**
-     * Get default reward to apply for redeem
+     * Get Customer Email
      *
-     * @return array
+     * @return string
      */
-    public function getDefaultRewardTypes(): array
+    public function getCustomerEmail()
     {
-        return [
-            "product_redemption" => "Product Redemption",
-            "fixed_amount_discount" => "Fixed Amount Discount",
-            "percentage_discount" => "Percentage Discount",
-            "free_shipping" => "Free Shipping"
-        ];
+        return $this->customerSession->getCustomer()->getEmail();
+    }
+
+    /**
+     * Get Reward Rules Data
+     *
+     * @param mixed $quote
+     * @param mixed $redeemReward
+     * @return mixed
+     */
+    public function getRewardRulesData($quote, $redeemReward)
+    {
+        return $this->helper->getRewardRulesData($quote, $redeemReward);
     }
 }

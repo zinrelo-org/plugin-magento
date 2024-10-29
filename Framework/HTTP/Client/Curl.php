@@ -2,28 +2,12 @@
 
 namespace Zinrelo\LoyaltyRewards\Framework\HTTP\Client;
 
-use Magento\Framework\App\ProductMetadataInterface;
 use Magento\Framework\HTTP\Client\Curl as MainCurl;
 
 class Curl extends MainCurl
 {
     /**
-     * @var ProductMetadataInterface
-     */
-    private $productMetadata;
-
-    /**
-     * Curl construct
-     *
-     * @param ProductMetadataInterface $productMetadata
-     */
-    public function __construct(ProductMetadataInterface $productMetadata)
-    {
-        $this->productMetadata = $productMetadata;
-    }
-
-    /**
-     * Parse headers - CURL callback function. Fixed for M230 version
+     * Parse headers - CURL callback function : We have override due to Compatibility of version M230.
      *
      * @param resource $ch curl handle, not needed
      * @param string $data
@@ -33,12 +17,10 @@ class Curl extends MainCurl
      */
     protected function parseHeaders($ch, $data)
     {
+        $data = $data !== null ? $data : '';
         if ($this->_headerCount == 0) {
             $line = explode(" ", trim($data), 3);
-            $version = $this->productMetadata->getVersion();
-            if ($version == "2.3.0" && count($line) < 2) {
-                $this->doError("Invalid response line returned from server: " . $data);
-            } elseif (count($line) < 2) {
+            if (count($line) < 2) {
                 $this->doError("Invalid response line returned from server: " . $data);
             }
             $this->_responseStatus = (int)$line[1];
@@ -51,11 +33,8 @@ class Curl extends MainCurl
             }
 
             if (strlen($name)) {
-                if ("Set-Cookie" == $name) {
-                    if (!isset($this->_responseHeaders[$name])) {
-                        $this->_responseHeaders[$name] = [];
-                    }
-                    $this->_responseHeaders[$name][] = $value;
+                if ('set-cookie' === strtolower($name)) {
+                    $this->_responseHeaders['Set-Cookie'][] = $value;
                 } else {
                     $this->_responseHeaders[$name] = $value;
                 }

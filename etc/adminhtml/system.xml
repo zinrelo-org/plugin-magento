@@ -38,9 +38,13 @@
                     </depends>
                     <validate>required-entry</validate>
                 </field>
-                
-                 <field id="api_key_identifier" showInDefault="1" showInStore="0" showInWebsite="1" sortOrder="30" translate="label" type="text">
+                <field id="api_key_identifier" showInDefault="1" showInStore="0" showInWebsite="1" sortOrder="30" translate="label" type="text">
                     <label>Add API Key Identifier</label>
+                    <comment>
+                        <![CDATA[
+                            To get <strong>API Key Identifier</strong> refer to <a href="https://help.zinrelo.com/reference/web-api-authentication#where-can-i-find-api-key-and-api-key-identifier" target="_blank">URL</a>.
+                        ]]>
+                    </comment>
                     <depends>
                         <field id="loyalty_rewards_active">1</field>
                     </depends>
@@ -120,14 +124,6 @@
                 <field id="languages_mapping" showInDefault="1" showInStore="1" showInWebsite="1" sortOrder="49" translate="label" type="text" canRestore="1">
                     <label>Languages(Locale)</label>
                     <comment>Value Pass Like : {"fr": "french", "es": "spanish", "hi": "custom language one"}</comment>
-                </field>
-                <field id="enable_log" showInDefault="1" showInStore="0" showInWebsite="1"
-                       sortOrder="50" translate="label" type="select">
-                    <label>Enable Log</label>
-                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
-                    <depends>
-                        <field id="loyalty_rewards_active">1</field>
-                    </depends>
                 </field>
             </group>
         </section>

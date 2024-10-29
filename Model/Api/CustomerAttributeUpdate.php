@@ -78,8 +78,6 @@ class CustomerAttributeUpdate
         $attributes = $this->request->getBodyParams();
         $requestedApiKey = $this->request->getHeader('api-key');
         $requestedPartnerId = $this->request->getHeader('partner-id');
-        $configuredApiKey = $this->helper->getApiKey();
-        $configuredPartnerId = $this->helper->getPartnerId();
         $response = [];
         if (!$this->helper->isModuleEnabled()) {
             $response[] = [
@@ -88,7 +86,8 @@ class CustomerAttributeUpdate
                         __('Enable module from: Stores → Configuration →Zinrelo Loyalty Rewards → Zinrelo Settings.')
                     ];
             return $response;
-        } elseif (($requestedPartnerId != $configuredPartnerId) || ($requestedApiKey != $configuredApiKey)) {
+        /*Check header api-key and partner-id with configured auth key*/
+        } elseif (!$this->helper->isValidateApiAuth($requestedApiKey, $requestedPartnerId)) {
             $response[] = [
                         'status' => false,
                         'message' => __('An invalid request data passed. Kindly check auth header data and try again.')
@@ -98,11 +97,9 @@ class CustomerAttributeUpdate
             foreach ($attributes['customer_attributes'] as $attribute) {
                 $attributeValues = $this->eavConfig->getAttribute(Customer::ENTITY, $attribute['attribute_code']);
                 $websiteID = $this->storeManager->getStore()->getWebsiteId();
-                $customer = $this->customer
-                    ->create()
-                    ->setWebsiteId($websiteID)
-                    ->loadByEmail($attribute['customer_email']);
-                if ($attributeValues->getIsZinreloAttribute() && $customer->getData()) {
+                $customer = $this->customer->create()->setWebsiteId($websiteID)->loadByEmail($attribute['customer_email']);
+                $eavAttribute = $this->helper->getZinreloAttributeByAttributeId($attributeValues->getAttributeId());
+                if ($eavAttribute->getIsZinreloAttribute() && $customer->getData()) {
                     $customerData = $customer->getDataModel();
                     $customerData->setCustomAttribute($attribute['attribute_code'], $attribute['value']);
                     $customer->updateData($customerData);

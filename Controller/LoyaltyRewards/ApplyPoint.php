@@ -2,6 +2,7 @@
 
 namespace Zinrelo\LoyaltyRewards\Controller\LoyaltyRewards;
 
+use Exception;
 use Magento\Customer\Model\Session;
 use Magento\Framework\App\Action\HttpPostActionInterface;
 use Magento\Framework\App\RequestInterface;
@@ -19,7 +20,8 @@ use Magento\Framework\Data\Form\FormKey;
 use Magento\Checkout\Model\Cart;
 use Magento\Catalog\Model\Product;
 use Magento\Catalog\Model\Product\Attribute\Source\Status;
-use Zinrelo\LoyaltyRewards\Block\Cart\RewardList;
+use Zinrelo\LoyaltyRewards\Logger\Logger;
+use Zinrelo\LoyaltyRewards\Model\ZinreloQuote;
 
 class ApplyPoint implements HttpPostActionInterface
 {
@@ -58,10 +60,6 @@ class ApplyPoint implements HttpPostActionInterface
      */
     private $product;
     /**
-     * @var RewardList
-     */
-    private $rewardList;
-    /**
      * @var Session
      */
     private $customerSession;
@@ -69,6 +67,10 @@ class ApplyPoint implements HttpPostActionInterface
      * @var SerializerInterface
      */
     private $serializer;
+    /**
+     * @var Logger
+     */
+    private $logger;
 
     /**
      * ApplyPoint construct
@@ -81,9 +83,9 @@ class ApplyPoint implements HttpPostActionInterface
      * @param Session $customerSession
      * @param Cart $cart
      * @param SerializerInterface $serializer
-     * @param RewardList $rewardList
      * @param Product $product
      * @param CheckoutSession $checkoutSession
+     * @param Logger $logger
      */
     public function __construct(
         JsonFactory $jsonFactory,
@@ -94,13 +96,12 @@ class ApplyPoint implements HttpPostActionInterface
         Session $customerSession,
         Cart $cart,
         SerializerInterface $serializer,
-        RewardList $rewardList,
         Product $product,
-        CheckoutSession $checkoutSession
+        CheckoutSession $checkoutSession,
+        Logger $logger
     ) {
         $this->formKey = $formKey;
         $this->cart = $cart;
-        $this->rewardList = $rewardList;
         $this->product = $product;
         $this->jsonFactory = $jsonFactory;
         $this->checkoutSession = $checkoutSession;
@@ -109,6 +110,7 @@ class ApplyPoint implements HttpPostActionInterface
         $this->helper = $helper;
         $this->customerSession = $customerSession;
         $this->serializer = $serializer;
+        $this->logger = $logger;
     }
 
     /**
@@ -122,10 +124,14 @@ class ApplyPoint implements HttpPostActionInterface
     {
         $redeemReward = $this->request->getPost('redeem_reward');
         $quote = $this->checkoutSession->getQuote();
-        $quote->setIsAbandonedCartSent(2)->save();
+        /*Managed Set zinrelo quote related to Data to custom table*/
+        $this->helper->setAbandonedCartSent($quote->getId(), 2);
+        $zinreloQuote = $this->helper->getZinreloQuoteByQuoteId($quote->getId());
+        /*End*/
         $resultJson = $this->jsonFactory->create();
+        $this->cart->setUpdatedAt()->save();
         if ($redeemReward == 'cancel') {
-            $rewardData = $this->helper->getRewardRulesData($quote, "");
+            $rewardData = $this->helper->getRewardRulesData($quote);
             $this->helper->sendRejectRewardRequest($quote);
             $this->messageManager->addNotice(
                 __('The redeemed %1 is canceled successfully.', $rewardData['reward_name'])
@@ -134,29 +140,94 @@ class ApplyPoint implements HttpPostActionInterface
                 'success' => true
             ]);
         }
-        $rewardRules = $this->rewardList->getRedeemRules();
+        $rewardRules = $this->helper->getRedeemRules();
         if (!empty($rewardRules)) {
-            $quote->setRewardRulesData($this->helper->json->serialize($rewardRules));
-            $quote->save();
+            try {
+                $zinreloQuote->setRewardRulesData($this->helper->jsonSerialize($rewardRules));
+                $zinreloQuote->save();
+            } catch (Exception $e) {
+                $this->logger->critical($e->getMessage());
+            }
         }
         $rewardData = $this->helper->getRewardRulesData($quote, $redeemReward);
-        $customerId = $this->customerSession->getCustomer()->getId();
-
         if ($rewardData["rule"] === "product_redemption" && !empty($rewardData["product_id"])) {
             $productId = $rewardData["product_id"];
             $product = $this->product->load($productId);
             if (!$product->getEntityId() || $product->getStatus() != Status::STATUS_ENABLED) {
-                $this->unsetRewardRules($quote);
+                $this->unsetRewardRules($zinreloQuote);
                 $this->messageManager->addError(__("Product that you are trying to add is not available."));
                 return $resultJson->setData([
                     'success' => false
                 ]);
             }
         }
+        $response = $this->getApiResponse($rewardData);
 
-        $customerEmail = $this->helper->getCustomerEmailById($customerId);
+        if ($response["success"] && !empty($response["result"]["data"])) {
+            $responseData = $response["result"]["data"];
+            if ($responseData["status"] === "pending") {
+                $this->saveQuoteData($zinreloQuote, $responseData, $redeemReward, $rewardData);
+                $this->messageManager->addSuccess(__('You have redeemed %1 successfully.', $rewardData['reward_name']));
+                return $resultJson->setData([
+                    'success' => true
+                ]);
+            } else {
+                $this->unsetRewardRules($zinreloQuote);
+                $this->messageManager->addError(
+                    __("This reward rule can not be redeemed, try with another reward rule")
+                );
+                return $resultJson->setData([
+                    'success' => false
+                ]);
+            }
+        } else {
+            $this->unsetRewardRules($zinreloQuote);
+            $this->messageManager->addError(__("This reward rule can not be redeemed, try with another reward rule"));
+            return $resultJson->setData([
+                'success' => false
+            ]);
+        }
+    }
+
+    /**
+     * Delete reward relus from quote when getting error from response
+     *
+     * @param ZinreloQuote $zinreloQuote
+     */
+    public function unsetRewardRules($zinreloQuote)
+    {
+        try {
+            $zinreloQuote->setRewardRulesData('');
+            $zinreloQuote->save();
+        } catch (Exception $e) {
+            $this->logger->critical($e->getMessage());
+        }
+    }
+
+    /**
+     * Get Api Response
+     *
+     * @param mixed $rewardData
+     * @return mixed
+     */
+    public function getApiResponse($rewardData)
+    {
         $url = $this->helper->getLiveWebHookUrl() . "transactions/redeem";
-        $params = [
+        $paramsData = $this->getParamsData($rewardData);
+        $params = $this->helper->jsonSerialize($paramsData);
+        return $this->helper->request($url, $params, "post", "live_api");
+    }
+
+    /**
+     * Get Params Data
+     *
+     * @param mixed $rewardData
+     * @return array
+     */
+    public function getParamsData($rewardData)
+    {
+        $customerEmail = $this->customerSession->getCustomer()->getEmail();
+        return [
             "member_id" => $customerEmail,
             "reward_id" => $rewardData["reward_id"],
             "transaction_attributes" => [
@@ -168,65 +239,67 @@ class ApplyPoint implements HttpPostActionInterface
             ],
             "status" => "pending"
         ];
-        $params = $this->helper->json->serialize($params);
+    }
 
-        $response = $this->helper->request($url, $params, "post", "live_api");
-        if ($response["success"] && !empty($response["result"]["data"])) {
-            $responseData = $response["result"]["data"];
-            if ($responseData["status"] === "pending") {
-                if ($rewardData["rule"] === "product_redemption" && !empty($rewardData["product_id"])) {
-                    $productId = $rewardData["product_id"];
-                    $additionalOptions[] = [
-                        'label' =>  __("Product Redemption"),
-                        'value' => $rewardData['reward_name']
-                    ];
-                    $params = [
-                        'form_key' => $this->formKey->getFormKey(),
-                        'product' => $productId,
-                        'qty' => 1
-                    ];
-                    $product = $this->product->load($productId);
-                    $product->setPrice(0);
-                    $product->addCustomOption('additional_options', $this->serializer->serialize($additionalOptions));
-                    $this->cart->addProduct($product, $params);
-                    $this->cart->save();
-                }
-                $allRewardRules = $this->helper->json->unserialize($quote->getRewardRulesData());
-                $allRewardRules[$responseData["reward_info"]["reward_id"]]["id"] = $responseData["id"];
-                $encodedRule = $this->helper->json->serialize($allRewardRules);
-                $quote->setRewardRulesData($encodedRule);
-                $quote->setRedeemRewardDiscount($redeemReward);
-                $quote->save();
-                $this->messageManager->addSuccess(__('You have redeemed %1 successfully.', $rewardData['reward_name']));
-                return $resultJson->setData([
-                    'success' => true
-                ]);
-            } else {
-                $this->unsetRewardRules($quote);
-                $this->messageManager->addError(
-                    __("This reward rule can not be redeemed, try with another reward rule")
-                );
-                return $resultJson->setData([
-                    'success' => false
-                ]);
+    /**
+     * Save Quote Data
+     *
+     * @param ZinreloQuote $zinreloQuote
+     * @param mixed $responseData
+     * @param mixed $redeemReward
+     * @param mixed $rewardData
+     */
+    public function saveQuoteData($zinreloQuote, $responseData, $redeemReward, $rewardData)
+    {
+        try {
+            if ($rewardData["rule"] === "product_redemption" && !empty($rewardData["product_id"])) {
+                $this->addToCartProductWithNewPrice($rewardData);
             }
-        } else {
-            $this->unsetRewardRules($quote);
-            $this->messageManager->addError(__("This reward rule can not be redeemed, try with another reward rule"));
-            return $resultJson->setData([
-                'success' => false
-            ]);
+            $allRewardRules = $this->helper->json->unserialize($zinreloQuote->getRewardRulesData());
+            $allRewardRules[$responseData["reward_info"]["reward_id"]]["id"] = $responseData["id"];
+            $encodedRule = $this->helper->json->serialize($allRewardRules);
+            $zinreloQuote->setRewardRulesData($encodedRule);
+            $zinreloQuote->setRedeemRewardDiscount($redeemReward);
+            $zinreloQuote->save();
+        } catch (Exception $e) {
+            $this->logger->critical($e->getMessage());
         }
     }
 
     /**
-     * Delete reward relus from quote when getting error from response
+     * Add To Cart Product With New Price
      *
-     * @param Quote $quote
+     * @param mixed $rewardData
      */
-    public function unsetRewardRules($quote)
+    public function addToCartProductWithNewPrice($rewardData)
     {
-        $quote->setRewardRulesData('');
-        $quote->save();
+        try {
+            $productId = $rewardData["product_id"];
+            $additionalOptions[] = [
+                'label' => __("Product Redemption"),
+                'value' => $rewardData['reward_name']
+            ];
+            $params = [
+                'form_key' => $this->formKey->getFormKey(),
+                'product' => $productId,
+                'qty' => 1
+            ];
+            $product = $this->product->load($productId);
+            $product->setPrice(0);
+            $product->addCustomOption('additional_options', $this->serializer->serialize($additionalOptions));
+            $this->cart->addProduct($product, $params);
+            $this->cart->save();
+            /*Set free product to Zinrelo quote item*/
+            $quoteItemCollection = $this->cart->getItems();
+            foreach ($quoteItemCollection as $item) {
+                if($item->getProductId() == $productId && $item->getPrice() == 0) {
+                    $zinreloQuoteItem = $this->helper->getZinreloQuoteItemByItemId($item->getId());
+                    $zinreloQuoteItem->setIsZinreloFreeProduct(1)->setQuoteItemId($item->getId())->save();
+                    break;
+                }
+            }
+        } catch (Exception $e) {
+            $this->logger->critical($e->getMessage());
+        }
     }
 }

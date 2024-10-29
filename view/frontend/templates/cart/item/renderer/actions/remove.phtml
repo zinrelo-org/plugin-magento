@@ -1,4 +1,7 @@
-<?php if ($block->getItem()->getIsZinreloFreeProduct()) { ?>
+<?php
+$zinreloHelper = $this->helper('Zinrelo\LoyaltyRewards\Helper\Config');
+$zinreloQuoteItem = $zinreloHelper->getZinreloQuoteItemByItemId($block->getItem()->getId());
+if ($zinreloQuoteItem->getIsZinreloFreeProduct()) { ?>
 <?php } else { ?>
     <a href="#"
        title="<?= $block->escapeHtml(__('Remove item')) ?>"

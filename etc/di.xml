@@ -1,10 +1,19 @@
 <?xml version="1.0"?>
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
+    <!--Create customer attribute from api-->
     <preference for="Zinrelo\LoyaltyRewards\Api\CustomerAttributeInterface" type="Zinrelo\LoyaltyRewards\Model\Api\CustomerAttribute"/>
+
+    <!--Update customer attribute from api-->
     <preference for="Zinrelo\LoyaltyRewards\Api\CustomerAttributeUpdateInterface" type="Zinrelo\LoyaltyRewards\Model\Api\CustomerAttributeUpdate"/>
-    <preference for="Magento\Checkout\CustomerData\DefaultItem" type="Zinrelo\LoyaltyRewards\Plugin\Checkout\CustomerData\DefaultItem"/>
+
+    <!--<preference for="Magento\Checkout\CustomerData\DefaultItem" type="Zinrelo\LoyaltyRewards\Plugin\Checkout\CustomerData\DefaultItem"/>-->
+    <type name="Magento\Checkout\CustomerData\DefaultItem">
+        <plugin name="zinrelo_add" type="Zinrelo\LoyaltyRewards\Plugin\Checkout\CustomerData\AroundPluginDefaultItem" disabled="false" sortOrder="10"/>
+    </type>
+    <!-- We need to use prefrences due to backward compatibility of M230  otherwise not need. The parseHeaders function is a protected of its class.-->
     <preference for="Magento\Framework\HTTP\Client\Curl" type="Zinrelo\LoyaltyRewards\Framework\HTTP\Client\Curl"/>
 
+    <!--Disable quantity box on checkout/cart page-->
     <type name="Magento\Checkout\Block\Cart\AbstractCart">
         <plugin name="item-disable-qty" type="Zinrelo\LoyaltyRewards\Plugin\Cart\DisableQty" sortOrder="1"/>
     </type>

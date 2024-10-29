@@ -11,8 +11,9 @@ define([
     'Magento_Catalog/js/price-utils',
     'underscore',
     'mage/template',
+    'priceUtils',
     'jquery/ui'
-], function ($, utils, _, mageTemplate) {
+], function ($, utils, _, mageTemplate, priceUtils) {
     'use strict';
 
     var globalOptions = {
@@ -140,15 +141,33 @@ define([
         reloadPrice: function reDrawPrices() {
             var priceFormat = (this.options.priceConfig && this.options.priceConfig.priceFormat) || {},
                 priceTemplate = mageTemplate(this.options.priceTemplate);
+                var productId = this.options.priceConfig.productId;
             if (this.cache.displayPrices) {
                 window.customFinalPrice = this.cache.displayPrices.finalPrice.amount;
                 if (this.cache.displayPrices.finalPrice) {
+                    // zrl_mi.price_identifier = function () {
+                    //     var product = {};
+                    //     product['price'] = window.customFinalPrice;
+                    //     return product;
+                    // }
                     zrl_mi.price_identifier = function () {
-                        var product = {};
-                        product['price'] = window.customFinalPrice;
+                        const product    = {};
+                        const price      = window.customFinalPrice;
+                        const category   = '';
+                        const product_id = productId;
+                        if (price) {
+                            product.price = price;
+                        }
+                        if (product_id) {
+                            product.product_id = product_id;
+                        }
+                        if (category) {
+                            product.category = category;
+                        }
                         return product;
-                    }
-                    zrl_mi.replace_product_page_potential();
+                    };
+                    zrl_mi.price_identifier();
+                    // zrl_mi.replace_product_page_potential();
                 }
 
             }
@@ -225,6 +244,32 @@ define([
                 this.options.prices = config.prices;
             }
         }
+    });
+
+    $(document).ready(function () {
+        $('#qty').on('change', function () {
+            var finalPriceElement = $('.product-info-price .price');
+            var formattedFinalPrice = priceUtils.formatPrice(finalPriceElement.text());
+            var rawFinalPrice = parseFloat(finalPriceElement.text().replace(/[^\d.-]/g, ''));
+            var qty = $(this).val();
+
+            zrl_mi.get_potential_points_success_handler = function(){
+                    var element = document.getElementById("potential_product_points");
+                    element.innerText = potential_points;
+                }
+            zrl_mi.get_potential_points([{
+                "product_id" : jQuery('.price-box.price-final_price').attr('data-product-id'),
+                "price": rawFinalPrice, 
+                "quantity": qty, 
+                "category": ''
+             }]); 
+            // zrl_mi.price_identifier = function () {
+            //     var product = {};
+            //     product['price'] = rawFinalPrice * qty;
+            //     return product;
+            // }
+            // zrl_mi.replace_product_page_potential();
+        });
     });
 
     return $.mage.priceBox;

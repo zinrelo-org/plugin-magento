@@ -40,9 +40,7 @@ class LoyaltyRewardsDiscount extends AbstractTotal
         Total $total
     ) {
         parent::collect($quote, $shippingAssignment, $total);
-        $redeemReward = $quote->getRedeemRewardDiscount();
-        $rewardData = $this->helper->getRewardRulesData($quote, $redeemReward);
-
+        $rewardData = $this->helper->getRewardRulesData($quote);
         if (isset($rewardData['rule'])
             && ($rewardData['rule'] == 'fixed_amount_discount'
                 || $rewardData['rule'] == 'percentage_discount')
@@ -71,8 +69,7 @@ class LoyaltyRewardsDiscount extends AbstractTotal
      */
     public function fetch(Quote $quote, Total $total)
     {
-        $redeemReward = $quote->getRedeemRewardDiscount();
-        $rewardData = $this->helper->getRewardRulesData($quote, $redeemReward);
+        $rewardData = $this->helper->getRewardRulesData($quote);
         $rewardRules = [
             'fixed_amount_discount',
             'percentage_discount',

@@ -44,22 +44,24 @@ class RemoveZinreloDiscount implements ObserverInterface
     public function execute(Observer $observer)
     {
         $quote = $this->checkoutSession->getQuote();
-        if ($quote->getIsAbandonedCartSent() || $quote->getIsAbandonedCartSent() === null) {
-            $quote->setIsAbandonedCartSent(2)->save();
+        $zinreloQuote = $this->helper->getZinreloQuoteByQuoteId($quote->getId());
+        if ($zinreloQuote->getIsAbandonedCartSent() || $zinreloQuote->getIsAbandonedCartSent() === null) {
+            $this->helper->setAbandonedCartSent($quote->getId(), 2);
         }
 
         $cart = $observer->getEvent()->getCart();
         if ($cart->getItemsCount() > 1) {
             return true;
-        } elseif ($cart->getItemsCount() === 1 && $quote->getRedeemRewardDiscount()) {
+        } elseif ($cart->getItemsCount() === 1 && $zinreloQuote->getRedeemRewardDiscount()) {
             foreach ($quote->getAllItems() as $item) {
-                if ($item->getIsZinreloFreeProduct()) {
+                $zinreloQuoteItem = $this->helper->getZinreloQuoteItemByItemId($item->getId());
+                if ($zinreloQuoteItem->getIsZinreloFreeProduct()) {
                     $this->helper->sendRejectRewardRequest($quote);
                     $quote->delete();
                     return true;
                 }
             }
-        } elseif ($cart->getItemsCount() === 0 && $quote->getRedeemRewardDiscount()) {
+        } elseif ($cart->getItemsCount() === 0 && $zinreloQuote->getRedeemRewardDiscount()) {
             $this->helper->sendRejectRewardRequest($quote);
             return true;
         }
