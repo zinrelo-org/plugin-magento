@@ -167,7 +167,7 @@ define([
                         return product;
                     };
                     zrl_mi.price_identifier();
-                    // zrl_mi.replace_product_page_potential();
+                    zrl_mi.replace_product_page_potential();
                 }
 
             }
