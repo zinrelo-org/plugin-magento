@@ -59,4 +59,7 @@
     <event name="sales_order_creditmemo_save_commit_after">
         <observer name="orderRefundZinrelo" instance="Zinrelo\LoyaltyRewards\Observer\OrderRefund"/>
     </event>
+    <event name="admin_system_config_changed_section_zinrelo_loyaltyRewards">
+        <observer name="configSaveObserver" instance="Zinrelo\LoyaltyRewards\Observer\ConfigSaveObserver"/>
+    </event>
 </config>

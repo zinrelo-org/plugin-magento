@@ -11,6 +11,7 @@ use Magento\Checkout\Model\Session as CheckoutSession;
 use Magento\Customer\Api\CustomerRepositoryInterface;
 use Magento\Customer\Model\SessionFactory;
 use Magento\Framework\App\Config\ScopeConfigInterface;
+use Magento\Framework\App\Config\Storage\WriterInterface;
 use Magento\Framework\App\Helper\AbstractHelper;
 use Magento\Framework\App\Helper\Context;
 use Magento\Framework\App\RequestInterface;
@@ -59,6 +60,10 @@ class Data extends AbstractHelper
      * @var ScopeConfigInterface $scopeConfig
      */
     protected $scopeConfig;
+    /**
+     * @var WriterInterface $writeConfig
+     */
+    protected $writeConfig;
     /**
      * @var SessionFactory
      */
@@ -155,6 +160,7 @@ class Data extends AbstractHelper
      * @param CategoryRepositoryInterface $categoryRepository
      * @param StoreManagerInterface $storeManager
      * @param ScopeConfigInterface $scopeConfig
+     * @param WriterInterface $writeConfig
      * @param Json $json
      */
     public function __construct(
@@ -178,6 +184,7 @@ class Data extends AbstractHelper
         CategoryRepositoryInterface $categoryRepository,
         StoreManagerInterface $storeManager,
         ScopeConfigInterface $scopeConfig,
+        WriterInterface $writeConfig,
         Json $json
     ) {
         $this->curl = $curl;
@@ -195,6 +202,7 @@ class Data extends AbstractHelper
         $this->logger = $logger;
         $this->storeManager = $storeManager;
         $this->scopeConfig = $scopeConfig;
+        $this->writeConfig = $writeConfig;
         $this->json = $json;
         $this->helperImageFactory = $helperImageFactory;
         $this->assetRepos = $assetRepos;
@@ -909,6 +917,67 @@ class Data extends AbstractHelper
     public function getWebHookUrl()
     {
         return $this->scopeConfig->getValue(self::XML_PATH_WEB_HOOK_URL);
+    }
+
+    /**
+     * Save Web Hook Url
+     *
+     * @return mixed
+     */
+    public function saveWebHookUrl($webhookUrl)
+    {
+        return $this->writeConfig->save(self::XML_PATH_WEB_HOOK_URL, $webhookUrl);
+    }
+
+    /**
+     * Create Web Hook Url
+     *
+     * @return mixed
+     */
+    public function createWebHookUrl()
+    {
+        try{
+            $url = 'https://api.zinrelo.com/v2/loyalty/integrations';
+            $headers = [
+                "content-type" => "application/json",
+                "accept" => "application/json",
+                'api-key' => $this->getApiKey(),
+                "partner-id" => $this->getPartnerId()
+            ];
+            $body = [
+                "integration_type" => "magento_to_zinrelo",
+                "config" => [
+                    "secret_key" => $this->getApiKey(),
+                    "events" => [
+                        "cart_abandonment",
+                        "customer_create",
+                        "customer_update",
+                        "order_create",
+                        "order_complete",
+                        "order_paid",
+                        "full_order_refund",
+                        "partial_order_refund",
+                        "order_cancelled",
+                        "order_shipped",
+                        "review_submitted",
+                        "review_approved"
+                    ]
+                ],
+                "status" => "active"
+            ];
+            $jsonBody = json_encode($body);
+            $curlRequest = $this->curl->create();
+            $curlRequest->setHeaders($headers);
+            $curlRequest->post($url, $jsonBody);
+            $response = $curlRequest->getBody();
+            $data = json_decode($response, true);
+            return $data['data']['config']['zif_config']['workflow_url'];
+        }
+        catch (Exception $e) {
+            $this->addErrorLog($e->getMessage());
+            $error = 'Failed to create a Webhook URL. Please check the details and try again.';
+            throw new Exception($error);
+        }
     }
 
     /**
