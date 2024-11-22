@@ -1,5 +1,4 @@
 <?php
-
 namespace Zinrelo\LoyaltyRewards\Observer;
 
 use Magento\Customer\Api\AddressRepositoryInterface;
@@ -39,7 +38,7 @@ class CustomerSaveAfter implements ObserverInterface
     private $registry;
 
     /**
-     * Customer Register-Update constructor.
+     * Customer Register constructor.
      *
      * @param Data $helper
      * @param Http $request
@@ -62,7 +61,7 @@ class CustomerSaveAfter implements ObserverInterface
     }
 
     /**
-     * Send customer create-update event to zinrelo
+     * Create customer event to zinrelo
      *
      * @param Observer $observer
      * @throws LocalizedException
@@ -72,58 +71,47 @@ class CustomerSaveAfter implements ObserverInterface
     {
         $event = $this->helper->getRewardEvents();
         $customerAddressData = [];
-        $addressId = '';
+        $addressId ='';
         $activity_id = "";
         $customerId = "";
-        $customer = $observer->getCustomer();
         $customerSave = $this->registry->registry('customer_save_event');
         $customerSaveAddress = $this->registry->registry('customer_address_save_event');
         if ($observer->getEvent()->getName() == "customer_save_commit_after" && !$customerSaveAddress) {
             if (!$observer->getCustomer()) {
                 return;
             }
-            $customerId = $customer->getEntityId();
-            /*Manage a activityId based on requesred Data*/
-            if ($customerId && (
-                in_array($this->request->getActionName(), ['editPost','inlineEdit']) ||
-                isset($this->request->getParam('customer')['entity_id'])
-            )) {
-                 $activity_id = "customer_update";
+            $customerData = $observer->getCustomer()->getData();
+            if (isset($customerData['id'])) {
+                if ($this->request->getActionName() == 'editPost' ||
+                    (isset($this->request->getParam('customer')['entity_id']) && $this->request->getParam('customer')['entity_id'])) {
+                    $customerId = $customerData['id'];
+                    $activity_id = "customer_update";
+                }
             } else {
-                 $activity_id = "customer_create";
+                $customerId = $customerData['entity_id'];
+                $activity_id = "customer_create";
             }
             $this->registry->register('customer_save_event', '1');
         } elseif ($observer->getEvent()->getName() == "customer_address_save_commit_after" && !$customerSave) {
-            // Sanitized the empty key from the response value;
-            $customerAddressData = $this->removeBlankAttributes($observer->getCustomerAddress()->getData());
-            $addressId = $customerAddressData["id"];
+            $customerAddressData = $observer->getCustomerAddress()->getData();
+            foreach ($customerAddressData as $key => $customerAdd) {
+                if (empty($customerAdd)) {
+                    unset($customerAddressData[$key]);
+                }
+            }
+            unset($customerAddressData["entity_id"], $customerAddressData["parent_id"]);
             $customerId = $customerAddressData["customer_id"];
+            $addressId = isset($customerAddressData["id"]) ? $customerAddressData["id"] : null;
             $activity_id = "customer_update";
             $this->registry->register('customer_address_save_event', '1');
         } elseif ($observer->getEvent()->getName() == "customer_address_delete_commit_after") {
-            $customerId = $observer->getCustomerAddress()->getCustomerId();
+            $customerData = $observer->getCustomerAddress()->getData();
+            $customerId = $customerData['parent_id'];
             $activity_id = "customer_update";
         }
         if (in_array($activity_id, $event, true)) {
             $this->prepareParams($observer, $customerId, $addressId, $customerAddressData, $activity_id);
         }
-    }
-
-    /**
-     * Remove Blank Attributes
-     *
-     * @param mixed $data
-     * @return mixed
-     */
-    public function removeBlankAttributes($data)
-    {
-        foreach ($data as $key => $customerAdd) {
-            if (empty($customerAdd)) {
-                unset($data[$key]);
-            }
-        }
-        unset($data["entity_id"], $data["parent_id"]);
-        return $data;
     }
 
     /**

@@ -162,9 +162,8 @@ class RejectRedeemReward
     public function calculateTimeInterval($quoteTime, $currentTimeZone)
     {
         $rewardAppliedTime = date("Y-m-d H:i:s", strtotime("$quoteTime + $this->abandonedCartTime minute"));
-        $rewardAppliedTime = $this->timezoneInterface
-            ->date($rewardAppliedTime, $currentTimeZone)
-            ->format('Y-m-d H:i:s');
+        $rewardAppliedTime = $this->timezoneInterface->date($rewardAppliedTime, $currentTimeZone)->format('Y-m-d H:i:s');
+        // $rewardAppliedTime = $this->timezoneInterface->date(new \DateTime($rewardAppliedTime), $currentTimeZone)->format('Y-m-d H:i:s');
         return $rewardAppliedTime;
     }
 
