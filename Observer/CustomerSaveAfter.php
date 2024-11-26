@@ -91,6 +91,9 @@ class CustomerSaveAfter implements ObserverInterface
                 $customerId = $customerData['entity_id'];
                 $activity_id = "customer_create";
             }
+            if($this->registry->registry('customer_address_save_event')) {
+                $this->registry->unregister('customer_address_save_event');
+            }
             $this->registry->register('customer_save_event', '1');
         } elseif ($observer->getEvent()->getName() == "customer_address_save_commit_after" && !$customerSave) {
             $customerAddressData = $observer->getCustomerAddress()->getData();
@@ -103,6 +106,9 @@ class CustomerSaveAfter implements ObserverInterface
             $customerId = $customerAddressData["customer_id"];
             $addressId = isset($customerAddressData["id"]) ? $customerAddressData["id"] : null;
             $activity_id = "customer_update";
+            if($this->registry->registry('customer_address_save_event')) {
+                $this->registry->unregister('customer_address_save_event');
+            }
             $this->registry->register('customer_address_save_event', '1');
         } elseif ($observer->getEvent()->getName() == "customer_address_delete_commit_after") {
             $customerData = $observer->getCustomerAddress()->getData();
