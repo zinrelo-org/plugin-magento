@@ -33,13 +33,24 @@ class ConfigSaveObserver implements ObserverInterface
 
     public function execute(Observer $observer)
     {
-        $webhookUrl =  $this->helper->getWebHookUrl();
-        $this->logger->info('Webhook URL: ' . $webhookUrl);
-        if (empty($webhookUrl)) {
-            $newWebhookUrl = $this->helper->createWebHookUrl();
-            $this->logger->info('New Webhook URL: ' . $newWebhookUrl);
-            if ($newWebhookUrl) {
-                $this->helper->saveWebHookUrl($newWebhookUrl);
+        $existingWebhookUrl =  $this->helper->getWebHookUrl();
+        $this->logger->info('Existing Webhook URL: ' . $existingWebhookUrl);
+        if (empty($existingWebhookUrl)) {
+            $url = $this->helper->getWebHookIntegrationURL();
+            $WebhookData = $this->helper->createOrUpdateZIFIntegration($url);
+            $WebhookUrl = $WebhookData['data']['config']['zif_config']['workflow_url'];
+            $WebhookIntegrationID = $WebhookData['data']['id'];
+            $this->logger->info('New Webhook URL: ' . $WebhookUrl);
+            if ($WebhookUrl) {
+                $this->helper->saveWebHookUrl($WebhookUrl);
+                $this->helper->saveWebHookIntegrationID($WebhookIntegrationID);
+            }
+        }
+        else{
+            $webhookIntegrationID =  $this->helper->getWebHookIntegrationID();
+            if (!empty($webhookIntegrationID)){
+                $url = $this->helper->getWebHookIntegrationURL() . "/" . $webhookIntegrationID;
+                $newWebhookData = $this->helper->createOrUpdateZIFIntegration($url);
             }
         }
     }

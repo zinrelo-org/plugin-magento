@@ -37,6 +37,8 @@ class Data extends AbstractHelper
 {
     public const XML_PATH_LOYALTY_REWARDS_ACTIVE = "zinrelo_loyaltyRewards/settings/loyalty_rewards_active";
     public const XML_PATH_WEB_HOOK_URL = "zinrelo_loyaltyRewards/settings/web_hook_url";
+    public const XML_PATH_WEBHOOK_INTEGRATION_ID = 'zinrelo_loyaltyRewards/settings/webhook_integration_id';
+    public const XML_PATH_WEBHOOK_INTEGRATION_URL = 'zinrelo_loyaltyRewards/settings/webhook_integration_url';
     public const XML_PATH_LIVE_WEB_HOOK_URL = "zinrelo_loyaltyRewards/settings/live_web_hook_url";
     public const XML_PATH_ABANDONED_CART_TIME = "zinrelo_loyaltyRewards/settings/abandoned_cart_time";
     public const XML_PATH_PARTNER_ID = "zinrelo_loyaltyRewards/settings/partner_id";
@@ -926,18 +928,18 @@ class Data extends AbstractHelper
      */
     public function saveWebHookUrl($webhookUrl)
     {
-        return $this->writeConfig->save(self::XML_PATH_WEB_HOOK_URL, $webhookUrl);
+        $this->writeConfig->save(self::XML_PATH_WEB_HOOK_URL, $webhookUrl);
+        return true;
     }
 
     /**
-     * Create Web Hook Url
+     * Create ZIF Integration
      *
      * @return mixed
      */
-    public function createWebHookUrl()
+    public function createOrUpdateZIFIntegration($url)
     {
         try{
-            $url = 'https://api.zinrelo.com/v2/loyalty/integrations';
             $headers = [
                 "content-type" => "application/json",
                 "accept" => "application/json",
@@ -948,36 +950,60 @@ class Data extends AbstractHelper
                 "integration_type" => "magento_to_zinrelo",
                 "config" => [
                     "secret_key" => $this->getApiKey(),
-                    "events" => [
-                        "cart_abandonment",
-                        "customer_create",
-                        "customer_update",
-                        "order_create",
-                        "order_complete",
-                        "order_paid",
-                        "full_order_refund",
-                        "partial_order_refund",
-                        "order_cancelled",
-                        "order_shipped",
-                        "review_submitted",
-                        "review_approved"
-                    ]
+                    "events" => $this->getRewardEvents()
                 ],
                 "status" => "active"
             ];
+
             $jsonBody = json_encode($body);
             $curlRequest = $this->curl->create();
             $curlRequest->setHeaders($headers);
             $curlRequest->post($url, $jsonBody);
             $response = $curlRequest->getBody();
+            if ($this->enableCustomLog()) {
+                $this->logger->info("Response: " . $response);
+                $this->logger->info("=============================");
+            }
             $data = json_decode($response, true);
-            return $data['data']['config']['zif_config']['workflow_url'];
+            return $data;
         }
         catch (Exception $e) {
             $this->addErrorLog($e->getMessage());
             $error = 'Failed to create a Webhook URL. Please check the details and try again.';
             throw new Exception($error);
         }
+    }
+
+
+    /**
+     * Get Web Hook Integration ID
+     *
+     * @return mixed
+     */
+    public function getWebHookIntegrationID()
+    {
+        return $this->scopeConfig->getValue(self::XML_PATH_WEBHOOK_INTEGRATION_ID);
+    }
+
+    /**
+     * Save Web Hook Integration ID
+     *
+     * @return mixed
+     */
+    public function saveWebHookIntegrationID($webhookIntegrationID)
+    {
+        $this->writeConfig->save(self::XML_PATH_WEBHOOK_INTEGRATION_ID, $webhookIntegrationID);
+        return true;
+    }
+
+    /**
+     * Get Web Hook Integration URL
+     *
+     * @return mixed
+     */
+    public function getWebHookIntegrationURL()
+    {
+        return $this->getConfig(self::XML_PATH_WEBHOOK_INTEGRATION_URL);
     }
 
     /**
