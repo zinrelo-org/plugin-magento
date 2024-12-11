@@ -13,6 +13,7 @@ use Magento\Customer\Model\Session;
 use Magento\Eav\Model\ResourceModel\Entity\Attribute;
 use Magento\Customer\Model\Customer as CustomerModel;
 use Magento\Framework\App\Config\ScopeConfigInterface;
+use Magento\Framework\App\Config\Storage\WriterInterface;
 use Magento\Framework\App\Helper\AbstractHelper;
 use Magento\Framework\App\Helper\Context;
 use Magento\Framework\App\RequestInterface;
@@ -47,6 +48,8 @@ class Config extends AbstractHelper
 {
     public const XML_PATH_LOYALTY_REWARDS_ACTIVE = "zinrelo_loyaltyRewards/settings/loyalty_rewards_active";
     public const XML_PATH_WEB_HOOK_URL = "zinrelo_loyaltyRewards/settings/web_hook_url";
+    public const XML_PATH_WEBHOOK_INTEGRATION_ID = 'zinrelo_loyaltyRewards/settings/webhook_integration_id';
+    public const XML_PATH_WEBHOOK_INTEGRATION_URL = 'zinrelo_loyaltyRewards/settings/webhook_integration_url';
     public const XML_PATH_LIVE_WEB_HOOK_URL = "zinrelo_loyaltyRewards/settings/live_web_hook_url";
     public const XML_PATH_ABANDONED_CART_TIME = "zinrelo_loyaltyRewards/settings/abandoned_cart_time";
     public const XML_PATH_PARTNER_ID = "zinrelo_loyaltyRewards/settings/partner_id";
@@ -85,6 +88,10 @@ class Config extends AbstractHelper
      * @var ScopeConfigInterface $scopeConfig
      */
     protected $scopeConfig;
+    /**
+     * @var WriterInterface $writeConfig
+     */
+    protected $writeConfig;
     /**
      * @var Session
      */
@@ -203,6 +210,7 @@ class Config extends AbstractHelper
      * @param CategoryRepositoryInterface $categoryRepository
      * @param StoreManagerInterface $storeManager
      * @param ScopeConfigInterface $scopeConfig
+     * @param WriterInterface $writeConfig
      * @param Json $json
      * @param CookieManagerInterface $cookieManager
      * @param CookieMetadataFactory $cookieMetadataFactory
@@ -233,6 +241,7 @@ class Config extends AbstractHelper
         CategoryRepositoryInterface $categoryRepository,
         StoreManagerInterface $storeManager,
         ScopeConfigInterface $scopeConfig,
+        WriterInterface $writeConfig,
         Json $json,
         CookieManagerInterface $cookieManager,
         CookieMetadataFactory $cookieMetadataFactory,
@@ -260,6 +269,7 @@ class Config extends AbstractHelper
         $this->logger = $logger;
         $this->storeManager = $storeManager;
         $this->scopeConfig = $scopeConfig;
+        $this->writeConfig = $writeConfig;
         $this->json = $json;
         $this->helperImageFactory = $helperImageFactory;
         $this->assetRepos = $assetRepos;
@@ -303,6 +313,21 @@ class Config extends AbstractHelper
     }
 
     /**
+     * Save Config
+     *
+     * @return mixed
+     */
+    public function saveConfig($config_path, $config_value)
+    {
+        return $this->writeConfig->save(
+            $config_path,
+            $config_value,
+            ScopeInterface::SCOPE_STORE,
+            $this->storeManager->getStore()->getStoreId()
+        );
+    }
+    
+    /**
      * Web Hook Url, which is received from Zinrelo to sent API resquest
      *
      * @return mixed
@@ -311,6 +336,93 @@ class Config extends AbstractHelper
     public function getWebHookUrl()
     {
         return $this->getConfig(self::XML_PATH_WEB_HOOK_URL);
+    }
+
+    /**
+     * Save Web Hook Url
+     *
+     * @return mixed
+     */
+    public function saveWebHookUrl($webhookUrl)
+    {
+        $this->saveConfig(self::XML_PATH_WEB_HOOK_URL, $webhookUrl);
+        return true;
+    }
+
+    /**
+     * Create ZIF Integration
+     *
+     * @return mixed
+     */
+    public function createOrUpdateZIFIntegration($url)
+    {
+        $headers = [
+            "content-type" => "application/json",
+            "accept" => "application/json",
+            'api-key' => $this->getApiKey(),
+            "partner-id" => $this->getPartnerId()
+        ];
+        $body = [
+            "integration_type" => "magento_to_zinrelo",
+            "config" => [
+                "secret_key" => $this->getApiKey(),
+                "events" => $this->getRewardEvents()
+            ],
+            "status" => "active"
+        ];
+        $jsonBody = json_encode($body);
+        $this->curl->setHeaders($headers);
+        $this->curl->post($url, $jsonBody);
+        $response = $this->curl->getBody();
+        $responseCode = $this->curl->getStatus();
+        $data = json_decode($response, true);
+        $this->logger->info("==============Start==============");
+        $this->logger->info("URL: " . $url);
+        $this->logger->info("RequestType: " . "post");
+        $this->logger->info("Headers: " . json_encode($headers));
+        $this->logger->info("Response: " . $response);
+        $this->logger->info("==============End===============");
+        if ($responseCode === 200) {
+            return $data;
+        }
+        else{
+            $errorMessage = $data['message'];
+            $this->logger->info($errorMessage);
+            $error = 'Failed to create a Webhook URL. Please check the details and try again.';
+            throw new Exception($error);
+        }
+    }
+
+
+    /**
+     * Get Web Hook Integration ID
+     *
+     * @return mixed
+     */
+    public function getWebHookIntegrationID()
+    {
+        return $this->getConfig(self::XML_PATH_WEBHOOK_INTEGRATION_ID);
+    }
+
+    /**
+     * Save Web Hook Integration ID
+     *
+     * @return mixed
+     */
+    public function saveWebHookIntegrationID($webhookIntegrationID)
+    {
+        //$this->writeConfig->save(self::XML_PATH_WEBHOOK_INTEGRATION_ID, $webhookIntegrationID);
+        $this->saveConfig(self::XML_PATH_WEBHOOK_INTEGRATION_ID, $webhookIntegrationID);
+    }
+
+    /**
+     * Get Web Hook Integration URL
+     *
+     * @return mixed
+     */
+    public function getWebHookIntegrationURL()
+    {
+        return $this->getConfig(self::XML_PATH_WEBHOOK_INTEGRATION_URL);
     }
 
     /**

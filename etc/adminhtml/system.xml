@@ -52,10 +52,10 @@
 
                 <field id="web_hook_url" showInDefault="1" showInStore="0" showInWebsite="1" sortOrder="35" translate="label" type="text">
                     <label>Webhook URL</label>
+                    <comment><![CDATA[This field is optional.]]></comment>
                     <depends>
                         <field id="loyalty_rewards_active">1</field>
                     </depends>
-                    <validate>required-entry validate-url</validate>
                 </field>
 
                 <field id="product_page_rewards_point_enable" showInDefault="1" showInStore="0" showInWebsite="1" sortOrder="40" translate="label" type="select">

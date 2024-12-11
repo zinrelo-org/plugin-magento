@@ -59,4 +59,8 @@
     <event name="customer_logout">
         <observer name="reset-cokkies-logout" instance="Zinrelo\LoyaltyRewards\Observer\Customer\CustomerLogoutObserver" />
     </event>
+    <!-- Call Zinrelo API after Config Save to Get Webhook Url -->
+    <event name="admin_system_config_changed_section_zinrelo_loyaltyRewards">
+        <observer name="configSaveObserver" instance="Zinrelo\LoyaltyRewards\Observer\ConfigSaveObserver"/>
+    </event>
 </config>
