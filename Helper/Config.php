@@ -321,9 +321,7 @@ class Config extends AbstractHelper
     {
         return $this->writeConfig->save(
             $config_path,
-            $config_value,
-            ScopeInterface::SCOPE_STORE,
-            $this->storeManager->getStore()->getStoreId()
+            $config_value
         );
     }
     
@@ -362,11 +360,18 @@ class Config extends AbstractHelper
             'api-key' => $this->getApiKey(),
             "partner-id" => $this->getPartnerId()
         ];
+        $events = $this->getRewardEvents();
+        if (in_array('order_refund', $events)) {
+                $events = array_diff($events, ['order_refund']);
+                $events[] = 'partial_order_refund';
+                $events[] = 'full_order_refund';
+        }
+
         $body = [
             "integration_type" => "magento_to_zinrelo",
             "config" => [
                 "secret_key" => $this->getApiKey(),
-                "events" => $this->getRewardEvents()
+                "events" => array_values($events)
             ],
             "status" => "active"
         ];
@@ -386,8 +391,6 @@ class Config extends AbstractHelper
             return $data;
         }
         else{
-            $errorMessage = $data['message'];
-            $this->logger->info($errorMessage);
             $error = 'Failed to create a Webhook URL. Please check the details and try again.';
             throw new Exception($error);
         }
@@ -411,7 +414,6 @@ class Config extends AbstractHelper
      */
     public function saveWebHookIntegrationID($webhookIntegrationID)
     {
-        //$this->writeConfig->save(self::XML_PATH_WEBHOOK_INTEGRATION_ID, $webhookIntegrationID);
         $this->saveConfig(self::XML_PATH_WEBHOOK_INTEGRATION_ID, $webhookIntegrationID);
     }
 
