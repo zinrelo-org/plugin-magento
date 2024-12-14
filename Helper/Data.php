@@ -3,9 +3,19 @@
 namespace Zinrelo\LoyaltyRewards\Helper;
 
 use Magento\Customer\Api\Data\CustomerInterface;
+use Zinrelo\LoyaltyRewards\Logger\Logger as ZinreloLogger;
 
 class Data extends Config
 {
+    /**
+     * @var ZinreloLogger
+     */
+    public $logger;
+    public function __construct(
+        ZinreloLogger $logger
+    ){
+        $this->logger = $logger;
+    }
     /**
      * Set zinrelo reward when order from Admin, and get OrderID for Zinrelo
      *
@@ -185,6 +195,15 @@ class Data extends Config
         $orderData = $this->setFormatedPrice($orderData);
         $orderData["entity_id"] = $replacedOrderId;
         $orderData["order_id"] = $replacedOrderId;
+        $orderData['base_discount_amount'] = abs($orderData['base_discount_amount']);
+        $orderData['base_discount_invoiced'] = abs($orderData['base_discount_invoiced']);
+        $orderData['discount_invoiced'] = abs($orderData['discount_invoiced']);
+        $orderData['discount_amount'] = abs($orderData['discount_amount']);
+        $this->logger->info("-----------------BEFORE--------------------");
+        $this->logger->info("Discount: " . $orderData['discount_amount']);
+        $this->logger->info("-------------------AFTER------------------");
+        $this->logger->info("Discount: " . $orderData['discount_amount']);
+        $this->logger->info("order_create");
         unset($orderData['items']);
         $totalDiscountAmount = 0;
         $totalBaseDiscountAmount = 0;

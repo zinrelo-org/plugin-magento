@@ -391,7 +391,9 @@ class Config extends AbstractHelper
             return $data;
         }
         else{
-            $error = 'Failed to create a Webhook URL. Please check the details and try again.';
+            $error = 'Failed to create a Webhook URL. Please check the configuration details and try again.';
+            $this->saveWebHookUrl(NULL);
+            $this->saveWebHookIntegrationID(NULL);
             throw new Exception($error);
         }
     }
