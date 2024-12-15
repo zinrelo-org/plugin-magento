@@ -329,7 +329,6 @@ class Config extends AbstractHelper
      * Web Hook Url, which is received from Zinrelo to sent API resquest
      *
      * @return mixed
-     * @throws NoSuchEntityException
      */
     public function getWebHookUrl()
     {

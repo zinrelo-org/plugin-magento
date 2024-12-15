@@ -63,6 +63,10 @@ class OrderComplete implements ObserverInterface
             $order->getPayment()->setMethodInstance();
             $orderData = $order->debug();
             $orderData = $this->helper->setFormatedPrice($orderData);
+            $orderData["base_discount_amount"] = abs($orderData["base_discount_amount"]);
+            $orderData["base_discount_invoiced"] = abs($orderData["base_discount_invoiced"]);
+            $orderData["discount_amount"] = abs($orderData["discount_amount"]);
+            $orderData["discount_invoiced"] = abs($orderData["discount_invoiced"]);
             $orderData['payment'] = $order->getPayment()->debug();
             unset($orderData['payment (Magento\Sales\Model\Order\Payment\Interceptor)']);
             $orderData['payment'] = $this->helper->setFormatedPrice($orderData['payment']);

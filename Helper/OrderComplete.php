@@ -65,6 +65,10 @@ class OrderComplete extends \Magento\Framework\App\Helper\AbstractHelper
             $orderData = $order->toArray();
             $orderData['base_subtotal_invoiced'] = $orderData['base_subtotal'];
             $orderData['subtotal_invoiced'] = $orderData['subtotal'];
+            $orderData["base_discount_amount"] = abs($orderData["base_discount_amount"]);
+            $orderData["base_discount_invoiced"] = abs($orderData["base_discount_invoiced"]);
+            $orderData["discount_amount"] = abs($orderData["discount_amount"]);
+            $orderData["discount_invoiced"] = abs($orderData["discount_invoiced"]);
             $orderData = $this->helper->setFormatedPrice($orderData);
             $orderData['payment'] = $order->getPayment()->debug();
             unset($orderData['payment (Magento\Sales\Model\Order\Payment\Interceptor)']);

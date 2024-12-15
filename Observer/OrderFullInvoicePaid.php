@@ -109,6 +109,8 @@ class OrderFullInvoicePaid implements ObserverInterface
             foreach ($invoicesItems["items"] as $key => $invoiceItem) {
                 $invoicesItems["items"][$key] = $this->helper->setFormatedPrice($invoicesItems["items"][$key]);
                 $invoicesItems["items"][$key]['total_qty'] = (int) $invoicesItems["items"][$key]['total_qty'];
+                $invoicesItems["items"][$key]['discount_amount'] = abs($invoicesItems["items"][$key]['discount_amount']);
+                $invoicesItems["items"][$key]['base_discount_amount'] = abs($invoicesItems["items"][$key]['base_discount_amount']);
                 $invoicesItems["items"][$key]["order_id"] = $replacedOrderId;
                 /*To get full item data we have to load repository invoice item data*/
                 $invoiceData = $this->invoiceRepository->get($invoiceItem["entity_id"]);
