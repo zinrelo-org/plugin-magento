@@ -186,7 +186,47 @@ class Data extends Config
         $orderData["entity_id"] = $replacedOrderId;
         $orderData["order_id"] = $replacedOrderId;
         unset($orderData['items']);
+        $totalDiscountAmount = 0;
+        $totalBaseDiscountAmount = 0;
         foreach ($order->getItems() as $item) {
+            if ($item->getParentItemId()) {
+                continue;
+            }
+            $quote = $this->quoteRepository->get($order->getQuoteId());
+            $zinreloQuote = $this->getZinreloQuoteByQuoteId($order->getQuoteId());
+            if (!empty($zinreloQuote->getRedeemRewardDiscount())) {
+                $redeemReward = $zinreloQuote->getRedeemRewardDiscount();
+                $rewardData = $this->getRewardRulesData($quote, $redeemReward);
+                if ($rewardData) {
+                    $discountValue = $rewardData['reward_value'];
+                    if ($rewardData['rule'] == 'percentage_discount') {
+                        $discountAmount = $item->getDiscountAmount() + (($item->getPrice() * $item->getQtyOrdered()) * $discountValue / 100);
+                        $baseDiscountAmount = $item->getBaseDiscountAmount() + (($item->getBasePrice() * $item->getQtyOrdered()) * $discountValue / 100);
+
+                        $discountAmountFormattedNumber = number_format($discountAmount, 2);
+                        $baseDiscountAmountFormattedNumber = number_format($baseDiscountAmount, 2);
+                        $item->setDiscountAmount($discountAmountFormattedNumber);
+                        $item->setBaseDiscountAmount($baseDiscountAmountFormattedNumber);
+                        $item->save();
+                        $totalDiscountAmount += $discountAmount;
+                        $totalBaseDiscountAmount += $baseDiscountAmount;
+                    } elseif ($rewardData['rule'] == 'fixed_amount_discount') {
+                        $OrderTotal = $quote->getSubtotal();
+                        $OrderBaseTotal = $quote->getBaseSubtotal();
+                        $totalPercentage = ($item->getPrice() * $item->getQtyOrdered()) / $OrderTotal;
+                        $totalBasePercentage = ($item->getBasePrice() * $item->getQtyOrdered()) / $OrderBaseTotal;
+                        $discountAmount = $item->getDiscountAmount() + ($totalPercentage * $discountValue);
+                        $baseDiscountAmount = $item->getBaseDiscountAmount() + ($totalBasePercentage * $discountValue);
+                        $discountAmountFormattedNumber = number_format($discountAmount, 2);
+                        $baseDiscountAmountFormattedNumber = number_format($baseDiscountAmount, 2);
+                        $item->setDiscountAmount($discountAmountFormattedNumber);
+                        $item->setBaseDiscountAmount($baseDiscountAmountFormattedNumber);
+                        $item->save();
+                        $totalDiscountAmount += $discountAmount;
+                        $totalBaseDiscountAmount += $baseDiscountAmount;
+                    }
+                }
+            }
             $orderItemData = $item->debug();
             $orderItemData['qty_ordered'] = (int)$orderItemData['qty_ordered'];
             if (isset($orderItemData['product_options']['info_buyRequest']['qty'])) {
@@ -210,14 +250,15 @@ class Data extends Config
 
             $orderItemData['order_id'] = $replacedOrderId;
             $productId = $orderItemData['product_id'];
-            /*Product url and product image url not availale in order item so we have to load product to get an additional required data*/
-            $productInfo = $this->getProductUrlAndImageUrl($productId);
-            $orderItemData['product_url'] = $productInfo['product_url'];
-            $orderItemData['product_image_url'] = $productInfo['product_image_url'];
-            $orderItemData['category_name'] = $this->getCategoryName($productId);
+            $orderItemData['product_url'] = $this->getProductUrl($productId);
+            $orderItemData['product_image_url'] = $this->getProductImageUrl($productId);
+            $categoryData = $this->getCategoryData($productId);
+            $orderItemData['category_name'] = $categoryData['name'];
+            $orderItemData['category_ids'] = $categoryData['ids'];
             $orderData['items'][] = $orderItemData;
         }
-
+        $orderData['discount_amount'] = $totalDiscountAmount;
+        $orderData['base_discount_amount'] = $totalBaseDiscountAmount;
         if (isset($orderData["addresses"])) {
             $addressesData = $orderData["addresses"];
             unset($orderData["addresses"]);
@@ -240,7 +281,10 @@ class Data extends Config
         ];
         $url = $this->getWebHookUrl();
         $params = $this->json->serialize($params);
-        $this->request($url, $params, "post");
+        $event = $this->getRewardEvents();
+        if (in_array('order_create', $event, true)) {
+            $response = $this->request($url, $params, "post");
+        }
         return true;
     }
 
@@ -253,6 +297,63 @@ class Data extends Config
     public function getCouponCodes($order)
     {
         return $order->getCouponCode() ? [$order->getCouponCode()] : [];
+    }
+
+    /**
+     * Get product url
+     *
+     * @param mixed $id
+     * @return mixed
+     * @throws NoSuchEntityException
+     */
+    public function getProductUrl($id)
+    {
+        $product = $this->productRepository->getById($id);
+        return $product->getProductUrl();
+    }
+
+    /**
+     * Get Product Image Url
+     *
+     * @param mixed $id
+     * @return string
+     * @throws NoSuchEntityException
+     */
+    public function getProductImageUrl($id)
+    {
+        $product = $this->productRepository->getById($id);
+        $mediaUrl = $this->storeManager->getStore()->getBaseUrl("media");
+        if ($product->getImage()) {
+            return $mediaUrl . 'catalog/product' . $product->getImage();
+        }
+        $imageData = $this->helperImageFactory->create();
+        return $this->assetRepos->getUrl($imageData->getPlaceholder('small_image'));
+    }
+
+    /**
+     * Get Category Data
+     *
+     * @param array $productId
+     * @return array
+     * @throws NoSuchEntityException
+     */
+    public function getCategoryData($productId)
+    {
+        $storeId = $this->storeManager->getStore()->getId();
+        $prodCatIds = $this->productCategory->getCategoryIds($productId);
+        $categoryName = [];
+        $categoryIds = [];
+        if ($prodCatIds) {
+            foreach ($prodCatIds as $catId) {
+                $categoryInstance = $this->categoryRepository->get($catId, $storeId);
+                $categoryName['name'][] = $categoryInstance->getName();
+                $categoryIds['ids'][] = $categoryInstance->getId();
+            }
+        }
+        return [
+            'name' => implode(',', array_unique(array_unique($categoryName['name']))),
+            'ids' => implode(',', array_unique(array_unique($categoryIds['ids'])))
+        ];
     }
 
     /**

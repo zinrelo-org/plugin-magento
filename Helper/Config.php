@@ -31,6 +31,7 @@ use Magento\Quote\Model\QuoteFactory;
 use Magento\Sales\Api\OrderRepositoryInterface;
 use Magento\Store\Model\ScopeInterface;
 use Magento\Store\Model\StoreManagerInterface;
+use Magento\Quote\Api\CartRepositoryInterface;
 use Magento\Framework\Stdlib\DateTime\TimezoneInterface;
 use Magento\Framework\Stdlib\Cookie\CookieMetadataFactory;
 use Magento\Framework\Stdlib\CookieManagerInterface;
@@ -76,6 +77,10 @@ class Config extends AbstractHelper
      * @var ZinreloLogger
      */
     public $logger;
+    /**
+     * @var CartRepositoryInterface
+     */
+    public $quoteRepository;
     /**
      * @var ScopeConfigInterface $scopeConfig
      */
@@ -232,6 +237,7 @@ class Config extends AbstractHelper
         CookieManagerInterface $cookieManager,
         CookieMetadataFactory $cookieMetadataFactory,
         SessionManagerInterface $sessionManager,
+        CartRepositoryInterface $quoteRepository,
         ZinreloEavAttributeFactory $zinreloEavAttributeFactory,
         ZinreloQuoteFactory $zinreloQuoteFactory,
         ZinreloQuoteItemFactory $zinreloQuoteItemFactory,
@@ -265,6 +271,7 @@ class Config extends AbstractHelper
         $this->zinreloQuoteItemFactory = $zinreloQuoteItemFactory;
         $this->zinreloReviewFactory = $zinreloReviewFactory;
         $this->zinreloSalesOrderFactory = $zinreloSalesOrderFactory;
+        $this->quoteRepository = $quoteRepository;
         $this->eavAttribute = $eavAttribute;
         parent::__construct($context);
     }
