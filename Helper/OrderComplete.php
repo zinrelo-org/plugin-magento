@@ -72,6 +72,22 @@ class OrderComplete extends \Magento\Framework\App\Helper\AbstractHelper
             $replacedOrderId = $this->helper->getReplacedOrderID($order->getEntityId());
             unset($orderData['items']);
             foreach ($order->getItems() as $item) {
+                $totalDiscountAmount = 0;
+                $totalBaseDiscountAmount = 0;
+                foreach ($order->getAllItems() as $item) {
+                    if ($item->getParentItemId()) {
+                        continue;
+                    }
+                    $discAmount[$item->getSku()] = $item->getDiscountAmount();
+                    $totalDiscountAmount += $discAmount[$item->getSku()];
+                }
+                foreach ($order->getAllItems() as $item) {
+                    if ($item->getParentItemId()) {
+                        continue;
+                    }
+                    $discBaseAmount[$item->getSku()] = $item->getBaseDiscountAmount();
+                    $totalBaseDiscountAmount += $discBaseAmount[$item->getSku()];
+                }
                 unset($item['product']);
                 $orderItemData = $item->debug();
                 $orderItemData['qty_ordered'] = (int)$orderItemData['qty_ordered'];
@@ -106,6 +122,8 @@ class OrderComplete extends \Magento\Framework\App\Helper\AbstractHelper
             foreach ($addressesData as $key => $address) {
                 $orderData["addresses"][] = $address;
             }
+            $orderData['discount_amount'] = $totalDiscountAmount ?? 0.00;
+            $orderData['base_discount_amount'] = $totalBaseDiscountAmount ?? 0.00;
             $orderData["entity_id"] = $replacedOrderId;
             $orderData["order_id"] = $replacedOrderId;
             $couponCode = $this->helper->getCouponCodes($order);
