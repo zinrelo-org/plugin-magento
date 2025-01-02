@@ -78,14 +78,10 @@ class OrderComplete extends \Magento\Framework\App\Helper\AbstractHelper
                     if ($item->getParentItemId()) {
                         continue;
                     }
-                    $discAmount[$item->getSku()] = $item->getDiscountAmount();
+                    $discAmount[$item->getSku()] = (int)$item->getDiscountAmount();
                     $totalDiscountAmount += $discAmount[$item->getSku()];
-                }
-                foreach ($order->getAllItems() as $item) {
-                    if ($item->getParentItemId()) {
-                        continue;
-                    }
-                    $discBaseAmount[$item->getSku()] = $item->getBaseDiscountAmount();
+                
+                    $discBaseAmount[$item->getSku()] = (int)$item->getBaseDiscountAmount();
                     $totalBaseDiscountAmount += $discBaseAmount[$item->getSku()];
                 }
                 unset($item['product']);

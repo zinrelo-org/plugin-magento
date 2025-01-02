@@ -194,6 +194,8 @@ class Data extends Config
             if ($item->getParentItemId()) {
                 continue;
             }
+            $totalDiscountAmount = $item->getDiscountAmount();
+            $totalBaseDiscountAmount = $item->getBaseDiscountAmount();
             $quote = $this->quoteRepository->get($order->getQuoteId());
             $zinreloQuote = $this->getZinreloQuoteByQuoteId($order->getQuoteId());
             if (!empty($zinreloQuote->getRedeemRewardDiscount())) {
@@ -202,8 +204,8 @@ class Data extends Config
                 if ($rewardData) {
                     $discountValue = $rewardData['reward_value'];
                     if ($rewardData['rule'] == 'percentage_discount') {
-                        $discountAmount = $item->getDiscountAmount() + (($item->getPrice() * $item->getQtyOrdered()) * $discountValue / 100);
-                        $baseDiscountAmount = $item->getBaseDiscountAmount() + (($item->getBasePrice() * $item->getQtyOrdered()) * $discountValue / 100);
+                        $discountAmount += (($item->getPrice() * $item->getQtyOrdered()) * $discountValue / 100);
+                        $baseDiscountAmount += (($item->getBasePrice() * $item->getQtyOrdered()) * $discountValue / 100);
 
                         $discountAmountFormattedNumber = number_format($discountAmount, 2);
                         $baseDiscountAmountFormattedNumber = number_format($baseDiscountAmount, 2);
@@ -217,8 +219,8 @@ class Data extends Config
                         $OrderBaseTotal = $quote->getBaseSubtotal();
                         $totalPercentage = ($item->getPrice() * $item->getQtyOrdered()) / $OrderTotal;
                         $totalBasePercentage = ($item->getBasePrice() * $item->getQtyOrdered()) / $OrderBaseTotal;
-                        $discountAmount = $item->getDiscountAmount() + ($totalPercentage * $discountValue);
-                        $baseDiscountAmount = $item->getBaseDiscountAmount() + ($totalBasePercentage * $discountValue);
+                        $discountAmount += ($totalPercentage * $discountValue);
+                        $baseDiscountAmount = ($totalBasePercentage * $discountValue);
                         $discountAmountFormattedNumber = number_format($discountAmount, 2);
                         $baseDiscountAmountFormattedNumber = number_format($baseDiscountAmount, 2);
                         $item->setDiscountAmount($discountAmountFormattedNumber);
