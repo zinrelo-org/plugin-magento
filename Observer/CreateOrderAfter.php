@@ -63,6 +63,7 @@ class CreateOrderAfter implements ObserverInterface
         $orderId = $observer->getEvent()->getOrder()->getId();
         $order = $this->orderRepository->get($orderId);
         $zinreloOrder = $this->helper->getZinreloOrderByOrderId($orderId);
+        $replacedOrderId = $order->getIncrementId();
         if (!$zinreloOrder->getZinreloReward()) {
             if ($order->getQuoteId() !== null) {
                 $quote = $this->quoteRepository->get($order->getQuoteId());
@@ -77,13 +78,12 @@ class CreateOrderAfter implements ObserverInterface
             } else {
                 $zinreloOrder->setZinreloReward("{}")->setOrderId($orderId);
             }
-            $replacedOrderId = $order->getIncrementId();
             try {
                 $zinreloOrder->save();
             } catch (CouldNotSaveException $e) {
                 $this->helper->addErrorLog($e->getMessage());
             }
-            $this->helper->createZinreloOrder($orderId, $replacedOrderId);
         }
+        $this->helper->createZinreloOrder($orderId, $replacedOrderId);
     }
 }

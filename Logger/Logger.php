@@ -36,6 +36,6 @@ class Logger extends MonologLogger
      */
     public function addErrorLog($logData)
     {
-        $this->logger->critical($logData);
+        $this->error($logData);
     }
 }

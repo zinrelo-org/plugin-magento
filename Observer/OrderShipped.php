@@ -97,7 +97,9 @@ class OrderShipped implements ObserverInterface
                         foreach ($shipmentData->getItems() as $item) {
                             unset($item['shipment']);
                             $shipmentItemData = $item->debug();
-                            $shipmentItemData['qty'] = (int)$shipmentItemData['qty'];
+			    $shipmentItemData['qty'] = (int)$shipmentItemData['qty'];
+			    $shipmentItemData['price'] = (float)$shipmentItemData['price'];
+                            $shipmentItemData['base_price'] = (float)$shipmentItemData['price'];
                             $shipmentItemData = $this->helper->setFormatedPrice($shipmentItemData);
                             $productId = $shipmentItemData['product_id'];
                             $shipmentItemData['discount_amount'] = $discAmount[$item->getSku()] ?? 0.00;
