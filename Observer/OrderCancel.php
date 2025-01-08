@@ -57,9 +57,6 @@ class OrderCancel implements ObserverInterface
             $orderData["entity_id"] = $replacedOrderId;
             unset($orderData['items']);
             foreach ($order->getItems() as $item) {
-                if ($item->getParentItemId()) {
-                    continue;
-                }
                 $orderItemData = $item->debug();
                 $orderItemData['qty_ordered'] = (int)$orderItemData['qty_ordered'];
                 if (isset($orderItemData['product_options']['info_buyRequest']['qty'])) {

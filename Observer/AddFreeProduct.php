@@ -57,7 +57,6 @@ class AddFreeProduct implements ObserverInterface
                 $item = ($item->getParentItem() ?: $item);
                 $price = 00.00;
                 $item->setCustomPrice($price);
-                $item->setIsZinreloFreeProduct(1);
                 $item->setOriginalCustomPrice($price);
                 $item->getProduct()->setIsSuperMode(true);
             }

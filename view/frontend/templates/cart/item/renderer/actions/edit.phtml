@@ -1,4 +1,7 @@
-<?php if ($block->getItem()->getIsZinreloFreeProduct()) { ?>
+<?php
+$zinreloHelper = $this->helper(Zinrelo\LoyaltyRewards\Helper\Config ::class);
+$zinreloQuoteItem = $zinreloHelper->getZinreloQuoteItemByItemId($block->getItem()->getId());
+if ($zinreloQuoteItem->getIsZinreloFreeProduct()) { ?>
     <?php if ($block->isProductVisibleInSiteVisibility()):?>
     <?php endif ?>
 <?php } else {

@@ -83,13 +83,16 @@ class CustomerSaveAfter implements ObserverInterface
             $customerData = $observer->getCustomer()->getData();
             if (isset($customerData['id'])) {
                 if ($this->request->getActionName() == 'editPost' ||
-                    $this->request->getParam('customer')['entity_id']) {
+                    (isset($this->request->getParam('customer')['entity_id']) && $this->request->getParam('customer')['entity_id'])) {
                     $customerId = $customerData['id'];
                     $activity_id = "customer_update";
                 }
             } else {
                 $customerId = $customerData['entity_id'];
                 $activity_id = "customer_create";
+            }
+            if($this->registry->registry('customer_address_save_event')) {
+                $this->registry->unregister('customer_address_save_event');
             }
             $this->registry->register('customer_save_event', '1');
         } elseif ($observer->getEvent()->getName() == "customer_address_save_commit_after" && !$customerSave) {
@@ -101,8 +104,11 @@ class CustomerSaveAfter implements ObserverInterface
             }
             unset($customerAddressData["entity_id"], $customerAddressData["parent_id"]);
             $customerId = $customerAddressData["customer_id"];
-            $addressId = $customerAddressData["id"];
+            $addressId = isset($customerAddressData["id"]) ? $customerAddressData["id"] : null;
             $activity_id = "customer_update";
+            if($this->registry->registry('customer_address_save_event')) {
+                $this->registry->unregister('customer_address_save_event');
+            }
             $this->registry->register('customer_address_save_event', '1');
         } elseif ($observer->getEvent()->getName() == "customer_address_delete_commit_after") {
             $customerData = $observer->getCustomerAddress()->getData();

@@ -2,207 +2,10 @@
 
 namespace Zinrelo\LoyaltyRewards\Helper;
 
-use Exception;
-use Magento\Catalog\Api\CategoryRepositoryInterface;
-use Magento\Catalog\Api\ProductRepositoryInterface;
-use Magento\Catalog\Helper\ImageFactory;
-use Magento\Catalog\Model\ProductCategoryList;
-use Magento\Checkout\Model\Session as CheckoutSession;
-use Magento\Customer\Api\CustomerRepositoryInterface;
-use Magento\Customer\Model\SessionFactory;
-use Magento\Framework\App\Config\ScopeConfigInterface;
-use Magento\Framework\App\Helper\AbstractHelper;
-use Magento\Framework\App\Helper\Context;
-use Magento\Framework\App\RequestInterface;
-use Magento\Framework\Escaper;
-use Magento\Framework\Exception\LocalizedException;
-use Magento\Framework\Exception\NoSuchEntityException;
-use Magento\Framework\HTTP\Client\CurlFactory;
-use Magento\Framework\Serialize\Serializer\Json;
-use Magento\Framework\Stdlib\DateTime\TimezoneInterface;
-use Magento\Framework\View\Asset\Repository;
-use Magento\Quote\Api\CartRepositoryInterface;
-use Magento\Quote\Api\Data\CartInterface;
-use Magento\Quote\Model\Quote;
-use Magento\Quote\Model\QuoteFactory;
-use Magento\Sales\Api\OrderRepositoryInterface;
-use Magento\Sales\Model\Order;
-use Magento\Sales\Model\ResourceModel\Order\Item\CollectionFactory;
-use Magento\Store\Model\ScopeInterface;
-use Magento\Store\Model\StoreManagerInterface;
-use Zinrelo\LoyaltyRewards\Logger\Logger as ZinreloLogger;
+use Magento\Customer\Api\Data\CustomerInterface;
 
-class Data extends AbstractHelper
+class Data extends Config
 {
-    public const XML_PATH_LOYALTY_REWARDS_ACTIVE = "zinrelo_loyaltyRewards/settings/loyalty_rewards_active";
-    public const XML_PATH_WEB_HOOK_URL = "zinrelo_loyaltyRewards/settings/web_hook_url";
-    public const XML_PATH_LIVE_WEB_HOOK_URL = "zinrelo_loyaltyRewards/settings/live_web_hook_url";
-    public const XML_PATH_ABANDONED_CART_TIME = "zinrelo_loyaltyRewards/settings/abandoned_cart_time";
-    public const XML_PATH_PARTNER_ID = "zinrelo_loyaltyRewards/settings/partner_id";
-    public const XML_PATH_API_KEY = "zinrelo_loyaltyRewards/settings/api_key";
-    public const XML_PATH_API_KEY_IDENTIFIER = "zinrelo_loyaltyRewards/settings/api_key_identifier";
-    public const XML_PATH_REWARD_EVENTS = "zinrelo_loyaltyRewards/settings/reward_events";
-    public const XML_PATH_REWARDS_DROPDOWN_ACTIVE = "zinrelo_loyaltyRewards/settings/rewards_event_drop_down_active";
-    public const XML_PATH_REWARDS_POINTS_AT_PDP = "zinrelo_loyaltyRewards/settings/product_page_rewards_point_enable";
-    public const XML_PATH_FREE_SHIPPING_LABEL = "zinrelo_loyaltyRewards/settings/free_shipping_label";
-    public const XML_PATH_PRODUCT_PAGE_REWARD_LABEL = "zinrelo_loyaltyRewards/settings/product_page_reward_label";
-    public const XML_PATH_CART_PAGE_REWARD_DROPDOWN_LABEL =
-        "zinrelo_loyaltyRewards/settings/cart_page_reward_dropdown_label";
-    public const XML_PATH_LANGUAGES = 'zinrelo_loyaltyRewards/settings/languages_mapping';
-    public const XML_PATH_ENABLE_CUSTOM_LOG = 'zinrelo_loyaltyRewards/settings/enable_log';
-
-    /**
-     * @var Json
-     */
-    public $json;
-    /**
-     * @var ScopeConfigInterface $scopeConfig
-     */
-    protected $scopeConfig;
-    /**
-     * @var SessionFactory
-     */
-    protected $customerSession;
-    /**
-     * @var CurlFactory
-     */
-    private $curl;
-    /**
-     * @var ZinreloLogger
-     */
-    private $logger;
-    /**
-     * @var ProductRepositoryInterface
-     */
-    private $productRepository;
-    /**
-     * @var TimezoneInterface
-     */
-    private $timezoneInterface;
-    /**
-     * @var StoreManagerInterface
-     */
-    private $storeManager;
-    /**
-     * @var ProductCategoryList
-     */
-    private $productCategory;
-    /**
-     * @var CategoryRepositoryInterface
-     */
-    private $categoryRepository;
-    /**
-     * @var CustomerRepositoryInterface
-     */
-    private $customerRepository;
-    /**
-     * @var QuoteFactory
-     */
-    private $quoteFactory;
-    /**
-     * @var OrderRepositoryInterface
-     */
-    private $orderRepository;
-    /**
-     * @var RequestInterface
-     */
-    private $request;
-    /**
-     * @var CheckoutSession
-     */
-    private $checkoutSession;
-    /**
-     * @var Repository
-     */
-    private $assetRepos;
-    /**
-     * @var ImageFactory
-     */
-    private $helperImageFactory;
-    /**
-     * @var Escaper
-     */
-    private $escaper;
-    /**
-     * @var CartRepositoryInterface
-     */
-    private $quoteRepository;
-    /**
-     * @var CollectionFactory
-     */
-    private $orderItem;
-
-    /**
-     * Data constructor.
-     *
-     * @param Context $context
-     * @param ZinreloLogger $logger
-     * @param CurlFactory $curl
-     * @param RequestInterface $request
-     * @param ProductCategoryList $productCategory
-     * @param CustomerRepositoryInterface $customerRepository
-     * @param TimezoneInterface $timezoneInterface
-     * @param ProductRepositoryInterface $productRepository
-     * @param SessionFactory $customerSession
-     * @param CheckoutSession $checkoutSession
-     * @param QuoteFactory $quoteFactory
-     * @param Repository $assetRepos
-     * @param Escaper $escaper
-     * @param ImageFactory $helperImageFactory
-     * @param CartRepositoryInterface $quoteRepository
-     * @param CollectionFactory $orderItem
-     * @param OrderRepositoryInterface $orderRepository
-     * @param CategoryRepositoryInterface $categoryRepository
-     * @param StoreManagerInterface $storeManager
-     * @param ScopeConfigInterface $scopeConfig
-     * @param Json $json
-     */
-    public function __construct(
-        Context $context,
-        ZinreloLogger $logger,
-        CurlFactory $curl,
-        RequestInterface $request,
-        ProductCategoryList $productCategory,
-        CustomerRepositoryInterface $customerRepository,
-        TimezoneInterface $timezoneInterface,
-        ProductRepositoryInterface $productRepository,
-        SessionFactory $customerSession,
-        CheckoutSession $checkoutSession,
-        QuoteFactory $quoteFactory,
-        Repository $assetRepos,
-        Escaper $escaper,
-        ImageFactory $helperImageFactory,
-        CartRepositoryInterface $quoteRepository,
-        CollectionFactory $orderItem,
-        OrderRepositoryInterface $orderRepository,
-        CategoryRepositoryInterface $categoryRepository,
-        StoreManagerInterface $storeManager,
-        ScopeConfigInterface $scopeConfig,
-        Json $json
-    ) {
-        $this->curl = $curl;
-        $this->escaper = $escaper;
-        $this->request = $request;
-        $this->checkoutSession = $checkoutSession;
-        $this->orderRepository = $orderRepository;
-        $this->quoteFactory = $quoteFactory;
-        $this->customerRepository = $customerRepository;
-        $this->categoryRepository = $categoryRepository;
-        $this->productCategory = $productCategory;
-        $this->timezoneInterface = $timezoneInterface;
-        $this->productRepository = $productRepository;
-        $this->customerSession = $customerSession;
-        $this->logger = $logger;
-        $this->storeManager = $storeManager;
-        $this->scopeConfig = $scopeConfig;
-        $this->json = $json;
-        $this->helperImageFactory = $helperImageFactory;
-        $this->assetRepos = $assetRepos;
-        $this->quoteRepository = $quoteRepository;
-        $this->orderItem = $orderItem;
-        parent::__construct($context);
-    }
-
     /**
      * Set zinrelo reward when order from Admin, and get OrderID for Zinrelo
      *
@@ -213,9 +16,12 @@ class Data extends AbstractHelper
     public function getReplacedOrderID($orderId, $isset = true)
     {
         $order = $this->orderRepository->get($orderId);
+        /*This condition only true when $isset passed as false.
+        We have passed false when it needed else this condition will not true and order will not nested save*/
         if (!$isset) {
-            $order->setZinreloReward("{}");
-            $order->save();
+            $zinreloOrder = $this->getZinreloOrderByOrderId($orderId);
+            $zinreloOrder->setZinreloReward("{}")->setOrderId($orderId);
+            $zinreloOrder->save();
         }
         return $order->getIncrementId();
     }
@@ -231,7 +37,8 @@ class Data extends AbstractHelper
         $order = $this->orderRepository->get($orderId);
         $quoteID = $order->getQuoteId();
         $quote = $this->quoteFactory->create()->load($quoteID);
-        $redeemReward = $quote->getRedeemRewardDiscount();
+        $zinreloQuote = $this->getZinreloQuoteByQuoteId($quote->getId());
+        $redeemReward = $zinreloQuote->getRedeemRewardDiscount();
         $rewardData = $this->getRewardRulesData($quote, $redeemReward);
         $discountAmount = "";
         $discountLabel = "";
@@ -254,184 +61,7 @@ class Data extends AbstractHelper
     }
 
     /**
-     * Get Applied Rule Data
-     *
-     * @param mixed $quote
-     * @param string $ruleId
-     * @return mixed
-     */
-    public function getRewardRulesData($quote, $ruleId = "")
-    {
-        if ($ruleId == "" && $quote) {
-            $ruleId = $quote->getRedeemRewardDiscount();
-        }
-
-        if ($quote) {
-            if ($quote->getRewardRulesData()) {
-                $rewardRules = $this->json->unserialize($quote->getRewardRulesData());
-                return $rewardRules[$ruleId] ?? [];
-            }
-        }
-        return [];
-    }
-
-    /**
-     * Get applied reward rule name
-     *
-     * @param Quote $quote
-     * @return string
-     */
-    public function getRewardAppliedRuleLabel($quote): string
-    {
-        $rewardData = $this->getRewardRulesData($quote);
-        return $this->escaper->escapeHtml($rewardData['reward_name']);
-    }
-
-    /**
-     * Get Collect Reward Value Data
-     *
-     * @param mixed $orderId
-     * @param mixed $flag
-     * @param mixed $actionData
-     * @return $this
-     */
-    public function getCollectRewardValueData($orderId, $flag, $actionData)
-    {
-        $order = $this->orderRepository->get($orderId);
-        $quoteID = $order->getQuoteId();
-        $quote = $this->quoteFactory->create()->load($quoteID);
-        $redeemReward = $quote->getRedeemRewardDiscount();
-        $rewardData = $this->getRewardRulesData($quote, $redeemReward);
-        if (isset($rewardData['rule'])
-            && ($rewardData['rule'] == 'fixed_amount_discount'
-                || $rewardData['rule'] == 'percentage_discount')) {
-
-            $totalAmount = $order->getSubtotal();
-            if ($rewardData['rule'] == 'fixed_amount_discount') {
-                $totalAmount = $rewardData['reward_value'];
-            } else {
-                $totalAmount = $totalAmount * $rewardData['reward_value'] / 100;
-            }
-            if ($flag == 'invoice') {
-                $invoiceId = '';
-                foreach ($order->getInvoiceCollection() as $invoice) {
-                    $invoiceId = $invoice->getIncrementId();
-                }
-                if (!$invoiceId) {
-                    $actionData->setGrandTotal($actionData->getGrandTotal() - $totalAmount);
-                    $actionData->setBaseGrandTotal($actionData->getBaseGrandTotal() - $totalAmount);
-                }
-            }
-            return $this;
-        }
-    }
-
-    /**
-     * Get idParam
-     *
-     * @param string $url
-     * @return string
-     */
-    public function getIdParam($url): string
-    {
-        $params = [
-            "idParam" => "member_id"
-        ];
-        $url .= "?" . http_build_query($params);
-        return $url;
-    }
-
-    /**
-     * Check Is Reward DropDown Enable
-     *
-     * @return bool
-     */
-    public function isRewardDropDownEnable()
-    {
-        $isModuleEnable = $this->isModuleEnabled();
-        $isRewardDropDownEnable = $this->getConfig(self::XML_PATH_REWARDS_DROPDOWN_ACTIVE) ?? false;
-        return ($isRewardDropDownEnable && $isModuleEnable) ?? false;
-    }
-
-    /**
-     * Check module is enabled or disabled
-     *
-     * @return bool
-     */
-    public function isModuleEnabled()
-    {
-        return $this->getConfig(self::XML_PATH_LOYALTY_REWARDS_ACTIVE) ? true : false;
-    }
-
-    /**
-     * Get Config
-     *
-     * @param mixed $config_path
-     * @return mixed
-     */
-    public function getConfig($config_path)
-    {
-        return $this->scopeConfig->getValue(
-            $config_path,
-            ScopeInterface::SCOPE_STORE,
-            $this->storeManager->getStore()->getStoreId()
-        );
-    }
-
-    /**
-     * Check Reward Point can show at PDP or not
-     *
-     * @return bool
-     */
-    public function isRewardPointAtPdpEnabled()
-    {
-        $isModuleEnable = $this->isModuleEnabled();
-        $isRewardPointAtPdpEnabled = $this->getConfig(self::XML_PATH_REWARDS_POINTS_AT_PDP) ?? false;
-        return ($isRewardPointAtPdpEnabled && $isModuleEnable) ?? false;
-    }
-
-    /**
-     * Get Label for show at Product view  Pages
-     *
-     * @return string
-     */
-    public function getRewardLabelAtProductPage(): string
-    {
-        return $this->getConfig(self::XML_PATH_PRODUCT_PAGE_REWARD_LABEL);
-    }
-
-    /**
-     * Get Label for show at cart page reward list dropdown section
-     *
-     * @return string
-     */
-    public function getRewardLabelAtCartPage(): string
-    {
-        return $this->getConfig(self::XML_PATH_CART_PAGE_REWARD_DROPDOWN_LABEL);
-    }
-
-    /**
-     * Get Free Shipping Label
-     *
-     * @return mixed
-     */
-    public function getFreeShippingLabel()
-    {
-        return $this->getConfig(self::XML_PATH_FREE_SHIPPING_LABEL);
-    }
-
-    /**
-     * Get Abandoned Cart Time
-     *
-     * @return mixed
-     */
-    public function getAbandonedCartTime()
-    {
-        return $this->getConfig(self::XML_PATH_ABANDONED_CART_TIME);
-    }
-
-    /**
-     * Get Customer By Id
+     * Get Customer Email By Id
      *
      * @param mixed $customerId
      * @return string
@@ -442,49 +72,30 @@ class Data extends AbstractHelper
     {
         if ($customerId) {
             try {
-                return $this->customerRepository->getById($customerId)->getEmail();
+                return $this->getCustomerById($customerId)->getEmail();
             } catch (Exception $e) {
-                $this->addErrorLog($e->getMessage());
+                $this->logger->addErrorLog($e->getMessage());
             }
         }
         return "";
     }
 
     /**
-     * Add log when getting error on get-set Data
+     * Get Customer By Id
      *
-     * @param mixed $logData
+     * @param mixed $customerId
+     * @return CustomerInterface|string
      */
-    public function addErrorLog($logData)
+    public function getCustomerById($customerId)
     {
-        if ($this->enableCustomLog()) {
-            $this->logger->critical($logData);
+        if ($customerId) {
+            try {
+                return $this->customerRepository->getById($customerId);
+            } catch (Exception $e) {
+                $this->logger->addErrorLog($e->getMessage());
+            }
         }
-    }
-
-    /**
-     * Enable Custom Log
-     *
-     * @return mixed
-     */
-    public function enableCustomLog()
-    {
-        return $this->getConfig(self::XML_PATH_ENABLE_CUSTOM_LOG);
-    }
-
-    /**
-     * Get Free Product
-     *
-     * @return mixed
-     */
-    public function getFreeProduct()
-    {
-        $quote = $this->checkoutSession->getQuote();
-        $rewardData = $this->getRewardRulesData($quote);
-        if ($rewardData) {
-            return $rewardData["product_id"];
-        }
-        return '';
+        return "";
     }
 
     /**
@@ -495,144 +106,31 @@ class Data extends AbstractHelper
      */
     public function sendRejectRewardRequest($quote)
     {
-        $redeemReward = $quote->getRedeemRewardDiscount();
-        $rewardData = $this->getRewardRulesData($quote, $redeemReward);
-        if (!empty($rewardData)) {
-            $url = $this->getLiveWebHookUrl() . "transactions/" . $rewardData['id'] . "/reject";
-            $this->request($url, "", "post", "live_api");
-            $items = $quote->getAllItems();
-            foreach ($items as $item) {
-                if ($item->getIsZinreloFreeProduct()) {
-                    $item->delete();
-                    $item->save();
+        try {
+            $zinreloQuote = $this->getZinreloQuoteByQuoteId($quote->getId());
+            $redeemReward = $zinreloQuote->getRedeemRewardDiscount();
+            $rewardData = $this->getRewardRulesData($quote, $redeemReward);
+            if (!empty($rewardData)) {
+                $url = $this->getLiveWebHookUrl() . "transactions/" . $rewardData['id'] . "/reject";
+                $this->request($url, "", "post", "live_api");
+                $items = $quote->getAllItems();
+                foreach ($items as $item) {
+                    $zinreloQuoteItem = $this->getZinreloQuoteItemByItemId($item->getId());
+                    if ($zinreloQuoteItem->getIsZinreloFreeProduct()) {
+                        $item->delete();
+                        $item->save();
+                        break;
+                    }
                 }
+                $zinreloQuote->setRedeemRewardDiscount('');
+                $zinreloQuote->setRewardRulesData('');
+                $zinreloQuote->save();
+                return true;
             }
-            $quote->setRedeemRewardDiscount('');
-            $quote->setRewardRulesData('');
-            $quote->save();
-            return true;
+        } catch (Exception $e) {
+            $this->logger->addErrorLog($e->getMessage());
         }
         return false;
-    }
-
-    /**
-     * Get Web Hook Url
-     *
-     * @return mixed
-     */
-    public function getLiveWebHookUrl()
-    {
-        return $this->getConfig(self::XML_PATH_LIVE_WEB_HOOK_URL);
-    }
-
-    /**
-     * Request to zinrelo for specific event URL
-     *
-     * @param mixed $url
-     * @param mixed $params
-     * @param string $requestType
-     * @param string $apiType
-     * @return mixed
-     */
-    public function request($url, $params, $requestType = "post", $apiType = "event_api")
-    {
-        try {
-            /* Add request data to log file*/
-            if ($this->enableCustomLog()) {
-                $this->logger->info("==============Start==============");
-                $this->logger->info("URL: " . $url);
-                $this->logger->info("RequestType: " . $requestType);
-            }
-            if ($apiType == "live_api") {
-                $headers = [
-                    "content-type" => "application/json",
-                    "api-key" => $this->getApiKey(),
-                    "partner-id" => $this->getPartnerId()
-                ];
-            } else {
-                $milliseconds = round(microtime(true) * 1000);
-                $nonce = $milliseconds;
-                $request_body = $params;
-                $secret_key = $this->getApiKey();
-                $message = $request_body . ":" . $nonce;
-                if ($this->enableCustomLog()) {
-                    $this->logger->info("Message: " . $message);
-                }
-                $computed_signature = $this->generateHasHmac('sha512', $message, $secret_key);
-                $headers = [
-                    "content-type" => "application/json",
-                    "x-magento-signature" => $computed_signature,
-                    'nonce' => $nonce,
-                    "partner-id" => $this->getPartnerId()
-                ];
-            }
-            if ($this->enableCustomLog()) {
-                $this->logger->info("Headers: " . json_encode($headers));
-                $this->logger->info("Params: " . $params);
-            }
-			$curlRequest = $this->curl->create();
-            $curlRequest->setHeaders($headers);
-            if ($requestType == "post") {
-                $curlRequest->post($url, $params);
-            } else {
-                if (!empty($params)) {
-                    $curlRequest->get($url, $params);
-                } else {
-                    $curlRequest->get($url);
-                }
-            }
-            $response = $curlRequest->getBody();
-            if ($this->enableCustomLog()) {
-                $this->logger->info("Response: " . $response);
-                $this->logger->info("==============End===============");
-            }
-            return $this->returnResponseData($response);
-        } catch (Exception $e) {
-            $this->addErrorLog($e->getMessage());
-        }
-    }
-
-    /**
-     * Get Api Key
-     *
-     * @return mixed
-     */
-    public function getApiKey()
-    {
-        return $this->getConfig(self::XML_PATH_API_KEY) ?? '';
-    }
-
-    /**
-     * Get Api Key Identifier
-     *
-     * @return mixed
-     */
-    public function getApiKeyIdentifier()
-    {
-        return $this->getConfig(self::XML_PATH_API_KEY_IDENTIFIER) ?? '';
-    }
-
-    /**
-     * Get Partner Id
-     *
-     * @return mixed
-     */
-    public function getPartnerId()
-    {
-        return $this->getConfig(self::XML_PATH_PARTNER_ID) ?? '';
-    }
-
-    /**
-     * Generate hash hmac key
-     *
-     * @param string $shaMethod
-     * @param string $msgData
-     * @param string $secret_key
-     * @return mixed
-     */
-    public function generateHasHmac($shaMethod, $msgData, $secret_key)
-    {
-        return hash_hmac($shaMethod, $msgData, $secret_key);
     }
 
     /**
@@ -667,30 +165,6 @@ class Data extends AbstractHelper
     }
 
     /**
-     * Is Json
-     *
-     * @param string $string
-     * @return bool
-     */
-    public function isJson($string)
-    {
-        json_decode($string);
-        return json_last_error() === JSON_ERROR_NONE;
-    }
-
-    /**
-     * Get quote
-     *
-     * @return CartInterface|Quote
-     * @throws LocalizedException
-     * @throws NoSuchEntityException
-     */
-    public function getQuote()
-    {
-        return $this->checkoutSession->getQuote();
-    }
-
-    /**
      * Request to Zinrelo for order_create
      *
      * @param string $id
@@ -711,26 +185,28 @@ class Data extends AbstractHelper
         $orderData = $this->setFormatedPrice($orderData);
         $orderData["entity_id"] = $replacedOrderId;
         $orderData["order_id"] = $replacedOrderId;
+        $orderData['base_discount_amount'] = abs($orderData['base_discount_amount']);
+        $orderData['discount_amount'] = abs($orderData['discount_amount']);
         unset($orderData['items']);
-        $totalDiscountAmount = 0;
-        $totalBaseDiscountAmount = 0;
+        $discountAmount = $totalDiscountAmount = $totalBaseDiscountAmount = 0;
         foreach ($order->getItems() as $item) {
             if ($item->getParentItemId()) {
                 continue;
             }
             $quote = $this->quoteRepository->get($order->getQuoteId());
-            if (!empty($quote->getRedeemRewardDiscount())) {
-                $redeemReward = $quote->getRedeemRewardDiscount();
+            $zinreloQuote = $this->getZinreloQuoteByQuoteId($order->getQuoteId());
+            if (!empty($zinreloQuote->getRedeemRewardDiscount())) {
+                $redeemReward = $zinreloQuote->getRedeemRewardDiscount();
                 $rewardData = $this->getRewardRulesData($quote, $redeemReward);
                 if ($rewardData) {
                     $discountValue = $rewardData['reward_value'];
                     if ($rewardData['rule'] == 'percentage_discount') {
-                        $discountAmount = $item->getDiscountAmount() +
-                            (($item->getPrice() * $item->getQtyOrdered()) * $discountValue / 100);
-                        $baseDiscountAmount = $item->getBaseDiscountAmount() +
-                            (($item->getBasePrice() * $item->getQtyOrdered()) * $discountValue / 100);
-                        $item->setDiscountAmount($discountAmount);
-                        $item->setBaseDiscountAmount($baseDiscountAmount);
+                        $discountAmount = $item->getDiscountAmount() + (($item->getPrice() * $item->getQtyOrdered()) * $discountValue / 100);
+                        $baseDiscountAmount = $item->getBaseDiscountAmount() + (($item->getBasePrice() * $item->getQtyOrdered()) * $discountValue / 100);
+                        $discountAmountFormattedNumber = number_format($discountAmount, 2);
+                        $baseDiscountAmountFormattedNumber = number_format($baseDiscountAmount, 2);
+                        $item->setDiscountAmount($discountAmountFormattedNumber);
+                        $item->setBaseDiscountAmount($baseDiscountAmountFormattedNumber);
                         $item->save();
                         $totalDiscountAmount += $discountAmount;
                         $totalBaseDiscountAmount += $baseDiscountAmount;
@@ -739,16 +215,22 @@ class Data extends AbstractHelper
                         $OrderBaseTotal = $quote->getBaseSubtotal();
                         $totalPercentage = ($item->getPrice() * $item->getQtyOrdered()) / $OrderTotal;
                         $totalBasePercentage = ($item->getBasePrice() * $item->getQtyOrdered()) / $OrderBaseTotal;
-                        $discountAmount = $item->getDiscountAmount() + ($totalPercentage * $discountValue);
+                        $discountAmount =  $item->getDiscountAmount() + ($totalPercentage * $discountValue);
                         $baseDiscountAmount = $item->getBaseDiscountAmount() + ($totalBasePercentage * $discountValue);
-                        $item->setDiscountAmount($discountAmount);
-                        $item->setBaseDiscountAmount($baseDiscountAmount);
+                        $discountAmountFormattedNumber = number_format($discountAmount, 2);
+                        $baseDiscountAmountFormattedNumber = number_format($baseDiscountAmount, 2);
+                        $item->setDiscountAmount($discountAmountFormattedNumber);
+                        $item->setBaseDiscountAmount($baseDiscountAmountFormattedNumber);
                         $item->save();
                         $totalDiscountAmount += $discountAmount;
                         $totalBaseDiscountAmount += $baseDiscountAmount;
                     }
                 }
-            }
+	    }
+	    else {
+		$totalDiscountAmount += $item->getDiscountAmount();
+		$totalBaseDiscountAmount += $item->getBaseDiscountAmount();
+	    }
             $orderItemData = $item->debug();
             $orderItemData['qty_ordered'] = (int)$orderItemData['qty_ordered'];
             if (isset($orderItemData['product_options']['info_buyRequest']['qty'])) {
@@ -822,29 +304,6 @@ class Data extends AbstractHelper
     }
 
     /**
-     * Set formated price and return updated array
-     *
-     * @param array $priceData
-     * @return array|string[]
-     */
-    public function setFormatedPrice($priceData)
-    {
-        foreach ($priceData as $key => $itemData) {
-            if ((strpos($key, 'price') !== false || strpos($key, 'amount') !== false ||
-                    strpos($key, 'rate') !== false || strpos($key, 'incl') !== false ||
-                    strpos($key, 'discount') !== false || strpos($key, 'base_shipping') !== false ||
-                    strpos($key, 'base_tax') !== false || strpos($key, 'row_') !== false ||
-                    strpos($key, 'shipping_invoiced') !== false || strpos($key, 'tax_invoiced') !== false ||
-                    strpos($key, 'shipping_captured') !== false || strpos($key, 'total') !== false
-                ) && $itemData != ""
-            ) {
-                $priceData[$key] = (float)$itemData;
-            }
-        }
-        return $priceData;
-    }
-
-    /**
      * Get product url
      *
      * @param mixed $id
@@ -902,154 +361,97 @@ class Data extends AbstractHelper
     }
 
     /**
-     * Get Web Hook Url
+     * Set formated price and return updated array
      *
-     * @return mixed
+     * @param array $priceData
+     * @return array|string[]
      */
-    public function getWebHookUrl()
+    public function setFormatedPrice($priceData)
     {
-        return $this->scopeConfig->getValue(self::XML_PATH_WEB_HOOK_URL);
-    }
-
-    /**
-     * Get Reward Events
-     *
-     * @return array
-     */
-    public function getRewardEvents()
-    {
-        if (!empty($this->getConfig(self::XML_PATH_REWARD_EVENTS)) && $this->isModuleEnabled()) {
-            return explode(',', $this->getConfig(self::XML_PATH_REWARD_EVENTS));
+        foreach ($priceData as $key => $itemData) {
+            if ((strpos($key, 'price') !== false || strpos($key, 'amount') !== false ||
+                    strpos($key, 'rate') !== false || strpos($key, 'incl') !== false ||
+                    strpos($key, 'discount') !== false || strpos($key, 'base_shipping') !== false ||
+                    strpos($key, 'base_tax') !== false || strpos($key, 'row_') !== false ||
+                    strpos($key, 'shipping_invoiced') !== false || strpos($key, 'tax_invoiced') !== false ||
+                    strpos($key, 'shipping_captured') !== false || strpos($key, 'total') !== false
+                ) && $itemData != ""
+            ) {
+                $priceData[$key] = (float)$itemData;
+            }
         }
-        return [];
+        return $priceData;
     }
 
     /**
-     * Order purchase request to zinrelo
+     * Get product url and Image Url
      *
-     * @param Order $order
-     * @param string $replacedOrderId
+     * @param mixed $id
+     * @return mixed
+     * @throws NoSuchEntityException
+     */
+    public function getProductUrlAndImageUrl($id)
+    {
+        $product = $this->productRepository->getById($id);
+        return [
+            'product_url' => $product->getProductUrl(),
+            'product_image_url' => $this->getImageFullUrl($product)
+        ];
+    }
+
+    /**
+     * Get Image Full Url
+     *
+     * @param mixed $product
+     * @return string
+     * @throws NoSuchEntityException
+     */
+    public function getImageFullUrl($product)
+    {
+        $mediaUrl = $this->storeManager->getStore()->getBaseUrl("media");
+        if ($product->getImage()) {
+            return $mediaUrl . 'catalog/product' . $product->getImage();
+        }
+        $imageData = $this->helperImageFactory->create();
+        return $this->assetRepos->getUrl($imageData->getPlaceholder('small_image'));
+    }
+
+    /**
+     * Get Category Name
+     *
+     * @param mixed $productId
+     * @throws NoSuchEntityException
+     */
+    public function getCategoryName($productId)
+    {
+        $storeId = $this->storeManager->getStore()->getId();
+        $categoryIds = $this->productCategory->getCategoryIds($productId);
+        $categoryName = '';
+        if ($categoryIds) {
+            $lastCategoryId = end($categoryIds);
+            $categoryInstance = $this->categoryRepository->get($lastCategoryId, $storeId);
+            $categoryName = $categoryInstance->getName();
+        }
+        return $categoryName;
+    }
+
+    /**
+     * Check API header api-key and partner-id with configured auth key
+     *
+     * @param mixed $requestedApiKey
+     * @param mixed $requestedPartnerId
      * @return bool
      */
-    public function orderPurchaseRequest($order, $replacedOrderId): bool
+    public function isValidateApiAuth($requestedApiKey, $requestedPartnerId)
     {
-        $url = $this->getLiveWebHookUrl() . "transactions/award";
-        $transactionAttributes = [
-            "tags" => [
-                "Order Purchased",
-                "New Order"
-            ],
-            "reason" => "purchase",
-            "order_id" => $replacedOrderId,
-            "coupons" => "testCPN",
-            "order_total" => $order->getGrandTotal(),
-            "order_subtotal" => $order->getSubtotal(),
-            "products" => $this->getOrderedItems($order->getAllItems())
-        ];
-        $currentTime = $this->timezoneInterface->date()->format('Y-m-d H:i:s');
-        $approvalDate = date("m/d/Y H:i:s", strtotime("$currentTime + 24 hours"));
-        $params = [
-            "member_id" => $order->getCustomerEmail(),
-            "activity_id" => "made_a_purchase",
-            "transaction_attributes" => $transactionAttributes,
-            "approval_date" => $approvalDate
-        ];
-        $params = $this->json->serialize($params);
-        $this->request($url, $params, "post", "live_api");
-        return true;
-    }
-
-    /**
-     * Get ordered items
-     *
-     * @param Order $orderItems
-     * @return array
-     * @throws Zend_Log_Exception
-     * @throws NoSuchEntityException
-     */
-    public function getOrderedItems($orderItems): array
-    {
-        $items = [];
-        foreach ($orderItems as $item) {
-            try {
-                $product = $this->productRepository->getById($item->getProductId());
-            } catch (NoSuchEntityException $e) {
-                $this->addErrorLog($e->getMessage());
-            }
-            $mediaUrl = $this->storeManager->getStore()->getBaseUrl("media");
-            $productImageUrl = $mediaUrl . 'catalog/product' . $product->getImage();
-            $productUrl = $product->getProductUrl();
-            $items[] = [
-                'product_id' => $item->getProductId(),
-                'product_quantity' => $item->getQtyOrdered(),
-                'product_price' => $item->getPrice(),
-                'product_category' => $this->getCategoryData($item->getProductId())['name'],
-                'product_category_ids' => $this->getCategoryData($item->getProductId())['ids'],
-                'product_title' => $item->getName(),
-                'product_url' => $productUrl,
-                'product_image_url' => $productImageUrl
-            ];
-        }
-        return $items;
-    }
-
-    /**
-     * Get Config Languages
-     *
-     * @return mixed
-     */
-    public function getConfigLanguage()
-    {
-        return $this->getConfig(self::XML_PATH_LANGUAGES);
-    }
-
-    /**
-     * Show Redeem Reward Discount In Admin Order
-     *
-     * @param mixed $order
-     * @throws NoSuchEntityException
-     */
-    public function showRedeemRewardDiscountInAdminOrder($order)
-    {
-        $quote = $this->quoteRepository->get($order->getQuoteId());
-        $totalDiscountAmount = 0;
-        $totalBaseDiscountAmount = 0;
-        if (!empty($quote->getRedeemRewardDiscount())) {
-            $redeemReward = $quote->getRedeemRewardDiscount();
-            $rewardData = $this->getRewardRulesData($quote, $redeemReward);
-            $discountValue = $rewardData['reward_value'];
-            $orderItems = $this->orderItem->create();
-            $orderItems->addAttributeToSelect('*')->addFieldToFilter('order_id', ['eq' => $order->getEntityId()]);
-            if ($rewardData['rule'] == 'percentage_discount') {
-                foreach ($orderItems as $orderItem) {
-                    $discountAmount = $orderItem->getDiscountAmount() +
-                        (($orderItem->getPrice() * $orderItem->getQtyOrdered()) * $discountValue / 100);
-                    $baseDiscountAmount = $orderItem->getBaseDiscountAmount() +
-                        (($orderItem->getBasePrice() * $orderItem->getQtyOrdered()) * $discountValue / 100);
-                    $orderItem->setDiscountAmount($discountAmount);
-                    $orderItem->setBaseDiscountAmount($baseDiscountAmount);
-                    $orderItem->save();
-                    $totalDiscountAmount += $discountAmount;
-                    $totalBaseDiscountAmount += $baseDiscountAmount;
-                }
-            } elseif ($rewardData['rule'] == 'fixed_amount_discount') {
-                foreach ($orderItems as $orderItem) {
-                    $OrderTotal = $order->getSubtotal();
-                    $OrderBaseTotal = $quote->getBaseSubtotal();
-                    $totalPercentage = ($orderItem->getBasePrice() * $orderItem->getQtyOrdered()) / $OrderTotal;
-                    $totalBasePercentage = ($orderItem->getBasePrice() * $orderItem->getQtyOrdered()) / $OrderBaseTotal;
-                    $discountAmount = $orderItem->getDiscountAmount() + ($totalPercentage * $discountValue);
-                    $baseDiscountAmount = $orderItem->getBaseDiscountAmount() + ($totalBasePercentage * $discountValue);
-                    $orderItem->setDiscountAmount($discountAmount);
-                    $orderItem->setBaseDiscountAmount($baseDiscountAmount);
-                    $orderItem->save();
-                    $totalDiscountAmount += $discountAmount;
-                    $totalBaseDiscountAmount += $baseDiscountAmount;
-                }
-            }
-            $order->setDiscountAmount($totalDiscountAmount);
-            $order->setBaseDiscountAmount($totalBaseDiscountAmount);
-            $order->save();
+        $configuredApiKey = $this->getApiKey();
+        $configuredPartnerId = $this->getPartnerId();
+        if (strcmp($requestedApiKey, $configuredApiKey) ||
+            strcmp($requestedPartnerId, $configuredPartnerId)
+        ) {
+            return false;
+        } else {
+            return true;
         }
     }
 }

@@ -1,15 +1,15 @@
 <?php
 $quote = $block->helper->getQuote();
-$redeemReward = $quote->getRedeemRewardDiscount();
+$zinreloQuote = $this->helper->getZinreloQuoteByQuoteId($quote->getId());
+$redeemReward = $zinreloQuote->getRedeemRewardDiscount();
 $rewardData = $block->helper->getRewardRulesData($quote, $redeemReward);
-
-$customerEmail = $block->helper->getCustomerEmailById($block->getCustomerId());
+$customerEmail = $block->getCustomerEmail();
 $points = $block->getRewardPoints();
 $redeemUrl = $block->getFormAction();
 $redeemRules = $block->getRedeemRules();
 $isEnabled = $block->helper->isRewardDropDownEnable();
 if (($isEnabled && !empty($customerEmail) && $points != "error" && !empty($redeemRules)) ||
-    ($isEnabled && $quote->getRewardRulesData() != "")
+    ($isEnabled && $zinreloQuote->getRewardRulesData() != "")
 ) {
     $points = ($points == "error") ? 0 : $points;
     $message = $block->helper->getRewardLabelAtCartPage();
@@ -56,25 +56,14 @@ if (($isEnabled && !empty($customerEmail) && $points != "error" && !empty($redee
         'jquery/ui',
         'mage/cookies'
     ], function ($, shippingrateservice) {
-        <?php if (empty($rewardData)) { ?>
+        <?php if (empty($rewardData)) : ?>
             if ($.mage.cookies.get('zinrelo_shipping_selected')) {
                 $.mage.cookies.clear('zinrelo_shipping_selected');
             }
-            if ($.mage.cookies.get('local_storage_cache_magento')) {
-                localData = window.localStorage.getItem('mage-cache-storage');
-                localDataDecoded = JSON.parse(localData);
-                if(localDataDecoded['cart-data'] != undefined){
-                    localDataDecoded['cart-data']['totals'] = [];
-                }
-                localDataEncoded = JSON.stringify(localDataDecoded);
-                window.localStorage.setItem('mage-cache-storage', localDataEncoded);
-                $.mage.cookies.clear('local_storage_cache_magento');
-            }
-        <?php } ?>
+        <?php endif; ?>
         $('#redeem').click(function () {
             var redeemRewardSelector = jQuery(".redeem-reward-selector").val();
             if (redeemRewardSelector != "") {
-                $.mage.cookies.set('local_storage_cache_magento', true, {lifetime: 432000});
                 $(".redeem-reward-selector").css("border-color", "#726d6d");
                 $("#redeem-reward").prop('disabled', true);
                 $("#redeem").prop('disabled', true);

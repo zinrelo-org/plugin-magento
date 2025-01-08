@@ -36,7 +36,7 @@ class CustomerDelete implements ObserverInterface
     }
 
     /**
-     * Delete customer event to zinrelo
+     * Send customer delete event to zinrelo
      *
      * @param Observer $observer
      * @throws LocalizedException
@@ -45,6 +45,7 @@ class CustomerDelete implements ObserverInterface
     public function execute(Observer $observer)
     {
         $event = $this->helper->getRewardEvents();
+        /*Check the customer_delete event is enabled, if enabled then will send customer_delete event to Zinrelo*/
         if (in_array('customer_delete', $event)) {
             $customerId = $observer->getEvent()->getCustomer()->getEntityId();
             $customer = $this->customerRepository->getById($customerId);

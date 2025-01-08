@@ -3,9 +3,10 @@ define([
     'underscore',
     'mage/utils/wrapper',
     'Magento_Checkout/js/checkout-data',
+    'Magento_Checkout/js/model/cart/cache',
     'Magento_Checkout/js/action/select-shipping-method',
     'mage/cookies'
-],function ($, _, wrapper, checkoutData, selectShippingMethodAction) {
+],function ($, _, wrapper, checkoutData, cartCache, selectShippingMethodAction) {
     'use strict';
 
     return function (checkoutDataResolver) {
@@ -21,6 +22,8 @@ define([
                 if (!_.isUndefined(method)) {
                     let isZinreloShippingSelected = ($.mage.cookies.get('zinrelo_shipping_selected'));
                     if (!isZinreloShippingSelected) {
+                        /*get zinrelo free shipping cart-data rates and make default selected */
+                        cartCache.clear('cart-data');
                         selectShippingMethodAction(method);
                         checkoutData.setSelectedShippingRate('zinrelorate_zinrelorate');
                         $.mage.cookies.set('zinrelo_shipping_selected', true, {lifetime: 86400});

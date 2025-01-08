@@ -1,62 +1,66 @@
 <?xml version="1.0"?>
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:noNamespaceSchemaLocation="urn:magento:framework:Event/etc/events.xsd">
+    <!-- Manage free product price after free-product redemption -->
     <event name="checkout_cart_product_add_after">
         <observer name="free_product" instance="Zinrelo\LoyaltyRewards\Observer\AddFreeProduct"/>
     </event>
-
+    <!-- After Customer save our code will run to send customer create/update api to Zinrelo -->
     <event name="customer_save_commit_after">
         <observer name="customerSaveAfterZinrelo" instance="Zinrelo\LoyaltyRewards\Observer\CustomerSaveAfter" />
     </event>
-
+    <!-- After Customer address save our code will run to send customer create/update api to Zinrelo -->
     <event name="customer_address_save_commit_after">
         <observer name="customerAddressSaveAfter" instance="Zinrelo\LoyaltyRewards\Observer\CustomerSaveAfter" />
     </event>
-
+    <!-- After Customer address develete our code will run to send customer update api to Zinrelo -->
     <event name="customer_address_delete_commit_after">
         <observer name="customerAddressDeleteAfter" instance="Zinrelo\LoyaltyRewards\Observer\CustomerSaveAfter" />
     </event>
-
+    <!-- Send review create-approve event to zinrelo -->
     <event name="review_save_commit_after">
         <observer name="productReviewSaveAfter" instance="Zinrelo\LoyaltyRewards\Observer\ProductReviewSaveAfter" />
     </event>
-
+    <!-- Remove free product from cart when all item removed -->
     <event name="checkout_cart_save_after">
         <observer name="removeZinreloDiscountZinrelo" instance="Zinrelo\LoyaltyRewards\Observer\RemoveZinreloDiscount"/>
     </event>
-
+    <!-- Send customer delete event to zinrelo -->
     <event name="customer_delete_after">
         <observer name="customerDeleteAfterZinrelo" instance="Zinrelo\LoyaltyRewards\Observer\CustomerDelete"/>
     </event>
-
-    <event name="paypal_express_place_order_success">
-        <observer name="orderCreateAfterApiZinrelo" instance="Zinrelo\LoyaltyRewards\Observer\CreateOrderAfter" />
-    </event>
-    
+    <!-- Send order update event to zinrelo -->
     <event name="sales_order_status_history_save_after">
         <observer name="orderUpdateZinrelo" instance="Zinrelo\LoyaltyRewards\Observer\OrderUpdate"/>
     </event>
-
+    <!-- Send order invoice paid event to zinrelo -->
     <event name="sales_order_invoice_save_commit_after">
         <observer name="invoiceSaveAfterZinrelo" instance="Zinrelo\LoyaltyRewards\Observer\OrderFullInvoicePaid"/>
     </event>
-
+    <!-- Send order shipped event to zinrelo -->
     <event name="sales_order_shipment_save_commit_after">
         <observer name="shipmentSaveAfterZinrelo" instance="Zinrelo\LoyaltyRewards\Observer\OrderShipped"/>
     </event>
-
+    <!-- Send order cancel event to zinrelo -->
     <event name="order_cancel_after">
         <observer name="orderCancelAfterZinrelo" instance="Zinrelo\LoyaltyRewards\Observer\OrderCancel"/>
     </event>
-
-    <event name="sales_order_save_after">
-        <observer name="OrderCompleteZinrelo" instance="Zinrelo\LoyaltyRewards\Observer\OrderComplete"/>
-    </event>
-
+    <!-- Send order refund  event to zinrelo when order partial or Full refunded
+        This event will call only for Magento version 2.3.0
+     -->
     <event name="sales_order_creditmemo_save_after">
         <observer name="orderRefundZinrelo" instance="Zinrelo\LoyaltyRewards\Observer\OrderRefund"/>
     </event>
+    <!-- Send order refund  event to zinrelo when order partial or Full refunded -->
     <event name="sales_order_creditmemo_save_commit_after">
         <observer name="orderRefundZinrelo" instance="Zinrelo\LoyaltyRewards\Observer\OrderRefund"/>
+    </event>
+    <!-- Clear zinrelo cookie customer logged out -->
+    <event name="customer_logout">
+        <observer name="reset-cokkies-logout" instance="Zinrelo\LoyaltyRewards\Observer\Customer\CustomerLogoutObserver" />
+    </event>
+    <!-- Call Zinrelo API after Config Save to Get Webhook Url -->
+    <event name="admin_system_config_changed_section_zinrelo_loyaltyRewards">
+        <observer name="configSaveObserver" instance="Zinrelo\LoyaltyRewards\Observer\ConfigSaveObserver"/>
     </event>
 </config>

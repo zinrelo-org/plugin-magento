@@ -16,10 +16,10 @@ class EventsSelection implements OptionSourceInterface
         return [
             ['value' => 'cart_abandonment', 'label' => __('Cart Abandonment')],
             ['value' => 'customer_create', 'label' => __('Customer Create')],
-            ['value' => 'customer_delete', 'label' => __('Customer Delete')],
+            // ['value' => 'customer_delete', 'label' => __('Customer Delete')],
             ['value' => 'customer_update', 'label' => __('Customer Update')],
             ['value' => 'order_create', 'label' => __('Order Create')],
-            ['value' => 'order_update', 'label' => __('Order Update')],
+            // ['value' => 'order_update', 'label' => __('Order Update')],
             ['value' => 'order_complete', 'label' => __('Order Complete')],
             ['value' => 'order_paid', 'label' => __('Order Paid')],
             ['value' => 'order_refund', 'label' => __('Order Refund')],

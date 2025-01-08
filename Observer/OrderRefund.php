@@ -3,13 +3,13 @@
 namespace Zinrelo\LoyaltyRewards\Observer;
 
 use Exception;
-use Magento\Framework\Api\SearchCriteriaBuilder;
 use Magento\Framework\App\ProductMetadataInterface;
+use Magento\Framework\Api\SearchCriteriaBuilder;
 use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
-use Magento\Sales\Api\CreditmemoRepositoryInterface;
-use Magento\Sales\Model\OrderFactory;
 use Zinrelo\LoyaltyRewards\Helper\Data;
+use Magento\Sales\Model\OrderFactory;
+use Magento\Sales\Api\CreditmemoRepositoryInterface;
 
 class OrderRefund implements ObserverInterface
 {
@@ -35,7 +35,7 @@ class OrderRefund implements ObserverInterface
     private $productMetadata;
 
     /**
-     * Customer Register constructor.
+     * Order Refund constructor.
      *
      * @param Data $helper
      * @param SearchCriteriaBuilder $searchCriteriaBuilder
@@ -58,7 +58,7 @@ class OrderRefund implements ObserverInterface
     }
 
     /**
-     * Order refund  event to zinrelo
+     * Send order refund  event to zinrelo
      *
      * @param Observer $observer
      * @return bool
@@ -67,6 +67,7 @@ class OrderRefund implements ObserverInterface
     {
         $version = $this->productMetadata->getVersion();
         $event = $this->helper->getRewardEvents();
+        /*Check the order_refund event is enabled, if enabled then will send order_refund event to Zinrelo*/
         if (in_array('order_refund', $event)) {
             try {
                 /*This event should call only for Magento version 2.3.0*/
@@ -127,21 +128,44 @@ class OrderRefund implements ObserverInterface
             $refundData = $this->creditMemoRepository->get($refundItem["entity_id"]);
             foreach ($refundData->getItems() as $item) {
                 unset($item['refund']);
-                if ($item->getOrderItem()->getParentItem()) {
-                    continue;
-                }
                 $refundItemData = $item->debug();
                 $refundItemData = $this->helper->setFormatedPrice($refundItemData);
                 $productId = $refundItemData['product_id'];
-                $refundItemData['product_url'] = $this->helper->getProductUrl($productId);
-                $refundItemData['product_image_url'] = $this->helper->getProductImageUrl($productId);
-                $categoryData = $this->helper->getCategoryData($productId);
-                $refundItemData['category_name'] = $categoryData['name'];
-                $refundItemData['category_ids'] = $categoryData['ids'];
+                /*Product url and product image url not availale from CreditMemo item so we have to load product to get an additional required data*/
+                $productInfo = $this->helper->getProductUrlAndImageUrl($productId);
+                $refundItemData['product_url'] = $productInfo['product_url'];
+                $refundItemData['product_image_url'] = $productInfo['product_image_url'];
+                $refundItemData['category_name'] = $this->helper->getCategoryName($productId);
                 $refundsItems["items"][$key]['items'][] = $refundItemData;
             }
         }
         return $refundsItems;
+    }
+
+    /**
+     * Manage items and return updated items
+     *
+     * @param array $itemData
+     * @param array $refundData
+     * @return array
+     */
+    public function managePartialRefundItems($itemData, $refundData)
+    {
+        foreach ($itemData as $item) {
+            $item = $this->helper->setFormatedPrice($item);
+            if ($item["qty"]) {
+                $item['qty'] = (int) $item['qty'];
+                $productId = $item['product_id'];
+                /*Product url and product image url not availale from CreditMemo item so we have to load product to get an additional required data*/
+                $productInfo = $this->helper->getProductUrlAndImageUrl($productId);
+                $item['product_url'] = $productInfo['product_url'];
+                $item['product_image_url'] = $productInfo['product_image_url'];
+                $item["category_name"] = $this->helper->getCategoryName($productId);
+                $refundData["items"][0]["items"][] = $item;
+            }
+        }
+        $refundData["items"][0] = $this->helper->setFormatedPrice($refundData["items"][0]);
+        return $refundData;
     }
 
     /**
@@ -163,34 +187,5 @@ class OrderRefund implements ObserverInterface
         $params = $this->helper->json->serialize($params);
         $this->helper->request($url, $params, "post");
         return true;
-    }
-
-    /**
-     * Manage items and return updated items
-     *
-     * @param array $itemData
-     * @param array $refundData
-     * @return array
-     */
-    public function managePartialRefundItems($itemData, $refundData)
-    {
-        foreach ($itemData as $item) {
-            if (isset($item) && $item['price'] <= 0) {
-                continue;
-            }
-            $item = $this->helper->setFormatedPrice($item);
-            if ($item["qty"]) {
-                $item['qty'] = (int)$item['qty'];
-                $productId = $item['product_id'];
-                $item["product_url"] = $this->helper->getProductUrl($productId);
-                $item["product_image_url"] = $this->helper->getProductImageUrl($productId);
-                $categoryData = $this->helper->getCategoryData($productId);
-                $item['category_name'] = $categoryData['name'];
-                $item['category_ids'] = $categoryData['ids'];
-                $refundData["items"][0]["items"][] = $item;
-            }
-        }
-        $refundData["items"][0] = $this->helper->setFormatedPrice($refundData["items"][0]);
-        return $refundData;
     }
 }

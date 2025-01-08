@@ -62,27 +62,28 @@ class CreateOrderAfter implements ObserverInterface
         $event = $this->helper->getRewardEvents();
         $orderId = $observer->getEvent()->getOrder()->getId();
         $order = $this->orderRepository->get($orderId);
-        $this->helper->showRedeemRewardDiscountInAdminOrder($order);
-        if (!$order->getZinreloReward()) {
+        $zinreloOrder = $this->helper->getZinreloOrderByOrderId($orderId);
+        $replacedOrderId = $order->getIncrementId();
+        if (!$zinreloOrder->getZinreloReward()) {
             if ($order->getQuoteId() !== null) {
                 $quote = $this->quoteRepository->get($order->getQuoteId());
+                $zinreloQuote = $this->helper->getZinreloQuoteByQuoteId($order->getQuoteId());
             }
-            if ($order->getQuoteId() !== null && $quote->getRedeemRewardDiscount()) {
-                $redeemReward = $quote->getRedeemRewardDiscount();
+            if ($order->getQuoteId() !== null && $zinreloQuote->getRedeemRewardDiscount()) {
+                $redeemReward = $zinreloQuote->getRedeemRewardDiscount();
                 $rewardData = $this->helper->getRewardRulesData($quote, $redeemReward);
                 $url = $this->helper->getLiveWebHookUrl() . "transactions/" . $rewardData['id'] . "/approve";
                 $this->helper->request($url, "", "post", "live_api");
-                $order->setZinreloReward($this->serializer->serialize($rewardData));
+                $zinreloOrder->setZinreloReward($this->serializer->serialize($rewardData))->setOrderId($orderId);
             } else {
-                $order->setZinreloReward("{}");
+                $zinreloOrder->setZinreloReward("{}")->setOrderId($orderId);
             }
-            $replacedOrderId = $order->getIncrementId();
             try {
-                $order->save();
+                $zinreloOrder->save();
             } catch (CouldNotSaveException $e) {
                 $this->helper->addErrorLog($e->getMessage());
             }
-            $this->helper->createZinreloOrder($orderId, $replacedOrderId);
         }
+        $this->helper->createZinreloOrder($orderId, $replacedOrderId);
     }
 }
