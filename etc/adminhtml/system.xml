@@ -58,6 +58,19 @@
                     </depends>
                 </field>
 
+                <field id="hide_for_guests" showInDefault="1" showInStore="0" showInWebsite="1" sortOrder="36" translate="label" type="select">
+                    <label>Hide for guest users</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <depends>
+                        <field id="loyalty_rewards_active">1</field>
+                    </depends>
+                    <comment>
+                        <![CDATA[
+                            Please note that this will remove Zinrelo dashboard as well as points on product page for all guest users.
+                        ]]>
+                    </comment>
+                </field>
+
                 <field id="product_page_rewards_point_enable" showInDefault="1" showInStore="0" showInWebsite="1" sortOrder="40" translate="label" type="select">
                     <label>Enable reward points text on product pages</label>
                     <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
