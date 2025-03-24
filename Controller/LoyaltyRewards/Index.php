@@ -89,6 +89,9 @@ class Index implements HttpPostActionInterface
      */
     public function execute()
     {
+        if($this->helper->isDashboardHiddenForGuests() && !$this->sessionFactory->create()->getCustomerId()) {
+            return [];
+        }
         $key = $this->helper->getApiKey();
         $partnerId = $this->helper->getPartnerId();
         $apiKeyIdentifier = $this->helper->getApiKeyIdentifier();

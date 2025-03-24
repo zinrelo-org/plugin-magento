@@ -9,7 +9,7 @@ use Magento\Catalog\Helper\ImageFactory;
 use Magento\Catalog\Model\ProductCategoryList;
 use Magento\Checkout\Model\Session as CheckoutSession;
 use Magento\Customer\Api\CustomerRepositoryInterface;
-use Magento\Customer\Model\Session;
+use Magento\Customer\Model\SessionFactory;
 use Magento\Eav\Model\ResourceModel\Entity\Attribute;
 use Magento\Customer\Model\Customer as CustomerModel;
 use Magento\Framework\App\Config\ScopeConfigInterface;
@@ -47,6 +47,7 @@ use Zinrelo\LoyaltyRewards\Model\ZinreloSalesOrderFactory;
 class Config extends AbstractHelper
 {
     public const XML_PATH_LOYALTY_REWARDS_ACTIVE = "zinrelo_loyaltyRewards/settings/loyalty_rewards_active";
+    public const XML_PATH_DASHBOARD_HIDDEN_FOR_GUESTS = "zinrelo_loyaltyRewards/settings/hide_for_guests";
     public const XML_PATH_WEB_HOOK_URL = "zinrelo_loyaltyRewards/settings/web_hook_url";
     public const XML_PATH_WEBHOOK_INTEGRATION_ID = 'zinrelo_loyaltyRewards/settings/webhook_integration_id';
     public const XML_PATH_WEBHOOK_INTEGRATION_URL = 'zinrelo_loyaltyRewards/settings/webhook_integration_url';
@@ -200,7 +201,7 @@ class Config extends AbstractHelper
      * @param CustomerRepositoryInterface $customerRepository
      * @param TimezoneInterface $timezoneInterface
      * @param ProductRepositoryInterface $productRepository
-     * @param Session $customerSession
+     * @param SessionFactory $customerSession
      * @param CheckoutSession $checkoutSession
      * @param QuoteFactory $quoteFactory
      * @param Repository $assetRepos
@@ -231,7 +232,7 @@ class Config extends AbstractHelper
         CustomerRepositoryInterface $customerRepository,
         TimezoneInterface $timezoneInterface,
         ProductRepositoryInterface $productRepository,
-        Session $customerSession,
+        SessionFactory $customerSession,
         CheckoutSession $checkoutSession,
         QuoteFactory $quoteFactory,
         Repository $assetRepos,
@@ -493,6 +494,16 @@ class Config extends AbstractHelper
     }
 
     /**
+     * Check dashboar is enabled or disabled for guests
+     *
+     * @return bool
+     */
+    public function isDashboardHiddenForGuests()
+    {
+        return $this->getConfig(self::XML_PATH_DASHBOARD_HIDDEN_FOR_GUESTS) ? true : false;
+    }
+
+    /**
      * Check Reward Point can show at PDP or not
      *
      * @return bool
@@ -501,6 +512,10 @@ class Config extends AbstractHelper
     {
         $isModuleEnable = $this->isModuleEnabled();
         $isRewardPointAtPdpEnabled = $this->getConfig(self::XML_PATH_REWARDS_POINTS_AT_PDP) ?? false;
+        $isDashboardHiddenForGuests = $this->isDashboardHiddenForGuests();
+        if($isDashboardHiddenForGuests && !$this->getCustomerEmailBySession()) { 
+            return false; 
+        }
         return ($isRewardPointAtPdpEnabled && $isModuleEnable) ?? false;
     }
 
@@ -652,7 +667,7 @@ class Config extends AbstractHelper
      */
     public function getCustomerEmailBySession()
     {
-        return $this->customerSession->getCustomer()->getEmail() ?? '';
+        return $this->customerSession->create()->getCustomer()->getEmail() ?? '';
     }
 
     /**
