@@ -32,6 +32,9 @@ class LoyaltyRewardsDiscount extends AbstractTotal
      */
     public function collect(Invoice $invoice)
     {
+        if (!$invoice->getOrderId()) {
+            return $this;
+        }
         $orderId = $invoice->getOrderId();
         return $this->helper->getCollectRewardValueData($orderId, 'invoice', $invoice);
     }
