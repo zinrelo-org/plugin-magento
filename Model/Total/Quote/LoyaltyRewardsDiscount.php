@@ -43,13 +43,17 @@ class LoyaltyRewardsDiscount extends AbstractTotal
         $rewardData = $this->helper->getRewardRulesData($quote);
         if (isset($rewardData['rule'])
             && ($rewardData['rule'] == 'fixed_amount_discount'
-                || $rewardData['rule'] == 'percentage_discount')
+                || $rewardData['rule'] == 'percentage_discount'
+                || $rewardData['rule'] == 'flexible_points_reward')
         ) {
 
             $totalAmount = $total->getSubtotal();
             if ($rewardData['rule'] == 'fixed_amount_discount') {
                 $totalAmount = -$rewardData['reward_value'];
-            } else {
+            } else if ($rewardData['rule'] == 'flexible_points_reward') {
+                $totalAmount = -($rewardData['points_to_be_redeemed'] / $rewardData['conversion_rate']);
+            }
+            else {
                 $totalAmount = -($totalAmount * $rewardData['reward_value'] / 100);
             }
             $total->addTotalAmount('zinrelo_discount', $totalAmount);
@@ -74,6 +78,7 @@ class LoyaltyRewardsDiscount extends AbstractTotal
             'fixed_amount_discount',
             'percentage_discount',
             'product_redemption',
+            'flexible_points_reward'
         ];
         if (!empty($rewardData)
             && in_array($rewardData['rule'], $rewardRules)) {
@@ -84,6 +89,8 @@ class LoyaltyRewardsDiscount extends AbstractTotal
                 $totalAmount = -$totalAmount * $rewardData['reward_value'] / 100;
             } elseif ($rewardData['rule'] == 'product_redemption') {
                 $totalAmount = '';
+            } elseif ($rewardData['rule'] == 'flexible_points_reward') {
+                $totalAmount = -($rewardData['points_to_be_redeemed'] / $rewardData['conversion_rate']);
             }
             return [
                 'code' => 'zinrelo_discount',

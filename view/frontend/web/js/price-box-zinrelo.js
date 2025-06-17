@@ -164,7 +164,6 @@ define([
                     zrl_mi.price_identifier();
                     zrl_mi.replace_product_page_potential();
                 }
-
             }
             _.each(this.cache.displayPrices, function (price, priceCode) {
                 price.final = _.reduce(price.adjustments, function (memo, amount) {

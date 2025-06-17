@@ -27,6 +27,8 @@ class Reward extends Config
             $totalAmount = $order->getSubtotal();
             if ($rewardData['rule'] == 'fixed_amount_discount') {
                 $totalAmount = $rewardData['reward_value'];
+            } else if ($rewardData['rule'] == 'flexible_points_reward') {
+                $totalAmount = ($rewardData['points_to_be_redeemed'] / $rewardData['conversion_rate']);
             } else {
                 $totalAmount = $totalAmount * $rewardData['reward_value'] / 100;
             }

@@ -44,10 +44,13 @@ class Data extends Config
         $discountLabel = "";
         if (isset($rewardData['rule'])
             && ($rewardData['rule'] == 'fixed_amount_discount'
-                || $rewardData['rule'] == 'percentage_discount')) {
+                || $rewardData['rule'] == 'percentage_discount'
+                ||  $rewardData['rule'] == 'flexible_points_reward')) {
             $totalAmount = $order->getSubtotal();
             if ($rewardData['rule'] == 'fixed_amount_discount') {
                 $discountAmount = -$rewardData['reward_value'];
+            } else if ($rewardData['rule'] == 'flexible_points_reward') {
+                $discountAmount = -($rewardData['points_to_be_redeemed'] / $rewardData['conversion_rate']);
             } else {
                 $discountAmount = -$totalAmount * $rewardData['reward_value'] / 100;
             }
@@ -200,6 +203,9 @@ class Data extends Config
                 $rewardData = $this->getRewardRulesData($quote, $redeemReward);
                 if ($rewardData) {
                     $discountValue = $rewardData['reward_value'];
+                    if ($rewardData['rule'] == 'flexible_points_reward') {
+                        $discountValue = ($rewardData['points_to_be_redeemed'] / $rewardData['conversion_rate']);
+                    }
                     if ($rewardData['rule'] == 'percentage_discount') {
                         $discountAmount = $item->getDiscountAmount() + (($item->getPrice() * $item->getQtyOrdered()) * $discountValue / 100);
                         $baseDiscountAmount = $item->getBaseDiscountAmount() + (($item->getBasePrice() * $item->getQtyOrdered()) * $discountValue / 100);
@@ -210,7 +216,10 @@ class Data extends Config
                         $item->save();
                         $totalDiscountAmount += $discountAmount;
                         $totalBaseDiscountAmount += $baseDiscountAmount;
-                    } elseif ($rewardData['rule'] == 'fixed_amount_discount') {
+                    } elseif (
+                        $rewardData['rule'] == 'fixed_amount_discount' ||
+                        $rewardData['rule'] == 'flexible_points_reward'
+                    ) {
                         $OrderTotal = $quote->getSubtotal();
                         $OrderBaseTotal = $quote->getBaseSubtotal();
                         $totalPercentage = ($item->getPrice() * $item->getQtyOrdered()) / $OrderTotal;

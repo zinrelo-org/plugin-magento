@@ -41,4 +41,24 @@ class ProductView implements ArgumentInterface
     {
         return $this->helper->isRewardPointAtPdpEnabled();
     }
+
+    /**
+     * Check Reward Point can show at Cart Page or not
+     *
+     * @return bool
+     */
+    public function isPdpAtCartEnabled()
+    {
+        return $this->helper->isPDPAtCartEnabled();
+    }
+
+    /**
+     * Get reward label for Cart Page
+     *
+     * @return string
+     */
+    public function getRewardLabelAtCartPage()
+    {
+        return $this->helper->getPDPLabelAtCartPage();
+    }
 }

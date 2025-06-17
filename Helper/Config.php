@@ -61,9 +61,14 @@ class Config extends AbstractHelper
     public const XML_PATH_REWARDS_POINTS_AT_PDP = "zinrelo_loyaltyRewards/settings/product_page_rewards_point_enable";
     public const XML_PATH_FREE_SHIPPING_LABEL = "zinrelo_loyaltyRewards/settings/free_shipping_label";
     public const XML_PATH_PRODUCT_PAGE_REWARD_LABEL = "zinrelo_loyaltyRewards/settings/product_page_reward_label";
+    public const XML_PATH_PDP_CART_PAGE = "zinrelo_loyaltyRewards/settings/cart_page_rewards_point_enable";
+    public const XML_PATH_PDP_CART_PAGE_REWARD_LABEL = "zinrelo_loyaltyRewards/settings/cart_page_reward_label";
     public const XML_PATH_CART_PAGE_REWARD_DROPDOWN_LABEL =
         "zinrelo_loyaltyRewards/settings/cart_page_reward_dropdown_label";
     public const XML_PATH_LANGUAGES = 'zinrelo_loyaltyRewards/settings/languages_mapping';
+    public const XML_PATH_AUTO_ENROLLMENT = 'zinrelo_loyaltyRewards/settings/auto_enrollment';
+    public const XML_PATH_OPT_IN_FIELD_NAME = 'zinrelo_loyaltyRewards/settings/opt_in_field_name';
+
     /**
      * Cookie life time
      */
@@ -494,6 +499,26 @@ class Config extends AbstractHelper
     }
 
     /**
+     * Check auto enrollment is enabled or disabled
+     *
+     * @return bool
+     */
+    public function isAutoEnrollmentEnabled()
+    {
+        return $this->getConfig(self::XML_PATH_AUTO_ENROLLMENT) ? true : false;
+    }
+
+    /**
+     * Get Opt In Field Name
+     *
+     * @return mixed
+     */
+    public function getOptInAttributeCode()
+    {
+        return $this->getConfig(self::XML_PATH_OPT_IN_FIELD_NAME) ?? '';
+    }
+
+    /**
      * Check dashboar is enabled or disabled for guests
      *
      * @return bool
@@ -527,6 +552,32 @@ class Config extends AbstractHelper
     public function getRewardLabelAtProductPage(): string
     {
         return $this->getConfig(self::XML_PATH_PRODUCT_PAGE_REWARD_LABEL);
+    }
+
+     /**
+     * Check Reward Points can show at Cart Page
+     *
+     * @return bool
+     */
+    public function isPDPAtCartEnabled()
+    {
+        $isModuleEnable = $this->isModuleEnabled();
+        $isRewardPointAtCartEnabled = $this->getConfig(self::XML_PATH_PDP_CART_PAGE) ?? false;
+        $isDashboardHiddenForGuests = $this->isDashboardHiddenForGuests();
+        if($isDashboardHiddenForGuests && !$this->getCustomerEmailBySession()) {
+            return false;
+        }
+        return ($isRewardPointAtCartEnabled && $isModuleEnable) ?? false;
+    }
+
+    /**
+     * Get Label for show at Cart Pages
+     *
+     * @return string
+     */
+    public function getPDPLabelAtCartPage(): string
+    {
+        return $this->getConfig(self::XML_PATH_PDP_CART_PAGE_REWARD_LABEL);
     }
 
     /**
@@ -649,7 +700,13 @@ class Config extends AbstractHelper
                                 "reward_id" => $rule["reward_id"],
                                 "id" => '',
                                 "reward_name" => $rule["reward_name"],
-                                "reward_value" => !empty($rule["reward_value"]) ? $rule["reward_value"] : "",
+                                "reward_value" => $rule["reward_value"],
+                                "maximum_redemption_limit" => !empty($rule["extra_parameters"]["maximum_redemption_limit"])
+                                    ? $rule["extra_parameters"]["maximum_redemption_limit"] : "",
+                                "minimum_redemption_limit" => !empty($rule["extra_parameters"]["minimum_redemption_limit"])
+                                    ? $rule["extra_parameters"]["minimum_redemption_limit"] : "",
+                                "conversion_rate" => !empty($rule["extra_parameters"]["conversion_rate"])
+                                ? $rule["extra_parameters"]["conversion_rate"] : "",
                                 "product_id" => isset($rule["product_id"]) ? $rule["product_id"] : ""
                             ];
                         }
@@ -816,7 +873,8 @@ class Config extends AbstractHelper
             "product_redemption" => "Product Redemption",
             "fixed_amount_discount" => "Fixed Amount Discount",
             "percentage_discount" => "Percentage Discount",
-            "free_shipping" => "Free Shipping"
+            "free_shipping" => "Free Shipping",
+            "flexible_points_reward" => "Flexible Points Reward"
         ];
     }
 

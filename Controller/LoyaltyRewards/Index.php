@@ -4,6 +4,7 @@ namespace Zinrelo\LoyaltyRewards\Controller\LoyaltyRewards;
 
 use Firebase\JWT\JWT;
 use Magento\Customer\Model\CustomerFactory;
+use Magento\Customer\Api\CustomerRepositoryInterface;
 use Magento\Customer\Model\SessionFactory;
 use Magento\Directory\Model\CountryFactory;
 use Magento\Framework\App\Action\HttpPostActionInterface;
@@ -29,6 +30,10 @@ class Index implements HttpPostActionInterface
      * @var CustomerFactory
      */
     private $customerFactory;
+    /**
+     * @var CustomerRepositoryInterface
+     */
+    private $customerRepository;
     /**
      * @var SerializerInterface
      */
@@ -61,6 +66,7 @@ class Index implements HttpPostActionInterface
      * @param CountryFactory $countryFactory
      * @param Resolver $store
      * @param Data $helper
+     * @param CustomerRepositoryInterface $customerRepository
      */
     public function __construct(
         ResultFactory $resultFactory,
@@ -70,7 +76,8 @@ class Index implements HttpPostActionInterface
         SessionFactory $sessionFactory,
         CountryFactory $countryFactory,
         Resolver $store,
-        Data $helper
+        Data $helper,
+        CustomerRepositoryInterface $customerRepository
     ) {
         $this->resultFactory = $resultFactory;
         $this->jwt = $jwt;
@@ -80,6 +87,7 @@ class Index implements HttpPostActionInterface
         $this->countryFactory = $countryFactory;
         $this->store = $store;
         $this->helper = $helper;
+        $this->customerRepository = $customerRepository;
     }
 
     /**
@@ -108,6 +116,7 @@ class Index implements HttpPostActionInterface
         $lang = "";
         $isSetCookies = false;
 
+        $resultJson = $this->resultFactory->create(ResultFactory::TYPE_JSON);
         $jsonConfigLanguage = $this->helper->getConfigLanguage();
         if ($jsonConfigLanguage) {
             $lang = $this->store->getLocale() ?? "";
@@ -120,6 +129,15 @@ class Index implements HttpPostActionInterface
             }
         }
         $customerId = $this->sessionFactory->create()->getCustomerId();
+        if ($customerId && !$this->helper->isAutoEnrollmentEnabled() ) {
+            $customerData = $this->customerRepository->getById($customerId);
+            $opt_in_attribute = $this->helper->getOptInAttributeCode();
+            $zinreloOptedIn = $customerData->getCustomAttribute($opt_in_attribute);
+            if (!$zinreloOptedIn || !$zinreloOptedIn->getValue()) {
+                return $resultJson->setData([]);
+            }
+        }
+
         $customer = $this->customerFactory->create()->load($customerId);
         if ($customer->getEntityId()) {
             $billingAddress = $customer->getDefaultBillingAddress() ?
@@ -157,7 +175,6 @@ class Index implements HttpPostActionInterface
         ];
 
         $data = $this->jwt->encode($payload, $key, 'HS256');
-        $resultJson = $this->resultFactory->create(ResultFactory::TYPE_JSON);
         if ($customerEmail) {
             $this->helper->setCookie($data);
             $isSetCookies = true;
