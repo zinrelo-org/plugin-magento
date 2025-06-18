@@ -495,7 +495,19 @@ class Config extends AbstractHelper
      */
     public function isModuleEnabled()
     {
-        return $this->getConfig(self::XML_PATH_LOYALTY_REWARDS_ACTIVE) ? true : false;
+        if($this->getConfig(self::XML_PATH_LOYALTY_REWARDS_ACTIVE)) {
+            if(!$this->isAutoEnrollmentEnabled()) {
+                $customerId = $this->customerSession->create()->getCustomerId();
+                if ($customerId) {
+                    $zinreloOptedIn = $this->getOptInCustomAttributeValue($customerId);
+                    if (!$zinreloOptedIn) {
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -700,7 +712,7 @@ class Config extends AbstractHelper
                                 "reward_id" => $rule["reward_id"],
                                 "id" => '',
                                 "reward_name" => $rule["reward_name"],
-                                "reward_value" => $rule["reward_value"],
+                                "reward_value" => !empty($rule["reward_value"]) ? $rule["reward_value"] : "",
                                 "maximum_redemption_limit" => !empty($rule["extra_parameters"]["maximum_redemption_limit"])
                                     ? $rule["extra_parameters"]["maximum_redemption_limit"] : "",
                                 "minimum_redemption_limit" => !empty($rule["extra_parameters"]["minimum_redemption_limit"])
@@ -726,6 +738,23 @@ class Config extends AbstractHelper
     {
         return $this->customerSession->create()->getCustomer()->getEmail() ?? '';
     }
+
+    /**
+     * Get Customer Custom Attribute Value
+     *
+     * @return mixed
+     */
+    public function getOptInCustomAttributeValue($customerId)
+    {
+        $customerData = $this->customerRepository->getById($customerId);
+        $opt_in_attribute = $this->getOptInAttributeCode();
+        $zinreloOptedIn = $customerData->getCustomAttribute($opt_in_attribute);
+        if ($zinreloOptedIn) {
+            return $zinreloOptedIn->getValue();
+        }
+        return null;
+    }
+
 
     /**
      * Get Free Product
