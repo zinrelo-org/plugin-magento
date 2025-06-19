@@ -714,11 +714,11 @@ class Config extends AbstractHelper
                                 "reward_name" => $rule["reward_name"],
                                 "reward_value" => !empty($rule["reward_value"]) ? $rule["reward_value"] : "",
                                 "maximum_redemption_limit" => !empty($rule["extra_parameters"]["maximum_redemption_limit"])
-                                    ? $rule["extra_parameters"]["maximum_redemption_limit"] : "",
+                                    ? $rule["extra_parameters"]["maximum_redemption_limit"] : $availablePoint,
                                 "minimum_redemption_limit" => !empty($rule["extra_parameters"]["minimum_redemption_limit"])
                                     ? $rule["extra_parameters"]["minimum_redemption_limit"] : "",
                                 "conversion_rate" => !empty($rule["extra_parameters"]["conversion_rate"])
-                                ? $rule["extra_parameters"]["conversion_rate"] : "",
+                                    ? $rule["extra_parameters"]["conversion_rate"] : "",
                                 "product_id" => isset($rule["product_id"]) ? $rule["product_id"] : ""
                             ];
                         }

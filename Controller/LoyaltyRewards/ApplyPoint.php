@@ -162,9 +162,12 @@ class ApplyPoint implements HttpPostActionInterface
             }
         }
         if ($rewardData["rule"] === "flexible_points_reward") {
+            $quote = $this->helper->getQuote();
+            $subTotal = $quote->getSubtotal();
+            $conversion_rate = $rewardData['conversion_rate'];
             $redeemPoints = (int) $this->request->getPost('redeem_points');
             if ( $redeemPoints >= $rewardData['minimum_redemption_limit'] ) {
-                $redeemPoints = max($rewardData['minimum_redemption_limit'], min($redeemPoints, $rewardData['maximum_redemption_limit']));
+                $redeemPoints = min($subTotal*$conversion_rate, max($rewardData['minimum_redemption_limit'], min($redeemPoints, $rewardData['maximum_redemption_limit'])));
             }
             else {
                 $this->unsetRewardRules($zinreloQuote);

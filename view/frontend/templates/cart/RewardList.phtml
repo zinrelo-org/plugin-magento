@@ -126,8 +126,9 @@ if (($isEnabled && !empty($customerEmail) && $points != "error" && !empty($redee
                     var maxRedemption = parseInt(selectedOption.data("max-redemption")) || 0;
                     event.preventDefault();
                     var defaultPoints = <?= (int) $points ?>;
-                    defaultPoints = Math.max(minRedemption, Math.min(defaultPoints, maxRedemption));
                     var conversionRate = parseFloat(selectedOption.data("conversionRate")) || 0;
+                    var cartTotal = window.checkoutConfig.totalsData.subtotal;
+                    defaultPoints = Math.min(cartTotal*conversionRate, Math.max(minRedemption, Math.min(defaultPoints, maxRedemption)));
                     $("#redeemPointsInput")
                         .attr("min", minRedemption)
                         .attr("max", maxRedemption)
@@ -194,7 +195,8 @@ if (($isEnabled && !empty($customerEmail) && $points != "error" && !empty($redee
                 if (inputPoints < minRedemption) {
                     discountPoints = 0;
                 } else {
-                    discountPoints = Math.max(minRedemption, Math.min(inputPoints, maxRedemption));
+                    var cartTotal = window.checkoutConfig.totalsData.subtotal;
+                    discountPoints = Math.min(cartTotal*conversionRate, Math.max(minRedemption, Math.min(inputPoints, maxRedemption)));
                 }
                 var discount = (discountPoints / conversionRate).toFixed(2);
                 $("#discountAmount").text(`$${discount}`);
