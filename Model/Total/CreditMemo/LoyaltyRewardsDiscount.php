@@ -32,9 +32,10 @@ class LoyaltyRewardsDiscount extends AbstractTotal
      */
     public function collect(Creditmemo $creditMemo)
     {
-        if ($creditMemo->getTotalQty() > 0) {
-            $orderId = $creditMemo->getOrderId();
-            return $this->helper->getCollectRewardValueData($orderId, 'creditmemeo', $creditMemo);
-        }
+        // if ($creditMemo->getTotalQty() > 0) {
+        //     $orderId = $creditMemo->getOrderId();
+        //     return $this->helper->getCollectRewardValueData($orderId, 'creditmemeo', $creditMemo);
+        // }
+        return $this;
     }
 }

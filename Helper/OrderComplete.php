@@ -71,19 +71,19 @@ class OrderComplete extends \Magento\Framework\App\Helper\AbstractHelper
             $orderData['payment'] = $this->helper->setFormatedPrice($orderData['payment']);
             $replacedOrderId = $this->helper->getReplacedOrderID($order->getEntityId());
             unset($orderData['items']);
-            foreach ($order->getItems() as $item) {
-                $totalDiscountAmount = 0;
-                $totalBaseDiscountAmount = 0;
-                foreach ($order->getAllItems() as $item) {
-                    if ($item->getParentItemId()) {
-                        continue;
-                    }
-                    $discAmount[$item->getSku()] = (int)$item->getDiscountAmount();
-                    $totalDiscountAmount += $discAmount[$item->getSku()];
-                
-                    $discBaseAmount[$item->getSku()] = (int)$item->getBaseDiscountAmount();
-                    $totalBaseDiscountAmount += $discBaseAmount[$item->getSku()];
+            $totalDiscountAmount = 0;
+            $totalBaseDiscountAmount = 0;
+            foreach ($order->getAllItems() as $item) {
+                if ($item->getParentItemId()) {
+                    continue;
                 }
+                $discAmount[$item->getSku()] = (int)$item->getDiscountAmount();
+                $totalDiscountAmount += $discAmount[$item->getSku()];
+            
+                $discBaseAmount[$item->getSku()] = (int)$item->getBaseDiscountAmount();
+                $totalBaseDiscountAmount += $discBaseAmount[$item->getSku()];
+            }
+            foreach ($order->getItems() as $item) {
                 unset($item['product']);
                 $orderItemData = $item->debug();
                 $orderItemData['qty_ordered'] = (int)$orderItemData['qty_ordered'];
