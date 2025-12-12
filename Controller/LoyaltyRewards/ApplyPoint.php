@@ -161,6 +161,26 @@ class ApplyPoint implements HttpPostActionInterface
                 ]);
             }
         }
+        if ($rewardData["rule"] === "flexible_points_reward") {
+            $quote = $this->helper->getQuote();
+            $subTotal = $quote->getSubtotal();
+            $conversion_rate = $rewardData['conversion_rate'];
+            $redeemPoints = (int) $this->request->getPost('redeem_points');
+            if ( $redeemPoints >= $rewardData['minimum_redemption_limit'] ) {
+                $redeemPoints = min($subTotal*$conversion_rate, max($rewardData['minimum_redemption_limit'], min($redeemPoints, $rewardData['maximum_redemption_limit'])));
+            }
+            else {
+                $this->unsetRewardRules($zinreloQuote);
+                $this->messageManager->addError(__("Please enter the correct number of points to be redeemed."));
+                return $resultJson->setData([
+                    'success' => false
+                ]);
+            }
+            $rewardData["points_to_be_redeemed"] = $redeemPoints;
+            $rewardRules[$redeemReward]['points_to_be_redeemed'] = $redeemPoints;
+            $zinreloQuote->setRewardRulesData($this->helper->jsonSerialize($rewardRules));
+            $zinreloQuote->save();
+        }
         $response = $this->getApiResponse($rewardData);
 
         if ($response["success"] && !empty($response["result"]["data"])) {
@@ -227,7 +247,7 @@ class ApplyPoint implements HttpPostActionInterface
     public function getParamsData($rewardData)
     {
         $customerEmail = $this->customerSession->getCustomer()->getEmail();
-        return [
+        $params = [
             "member_id" => $customerEmail,
             "reward_id" => $rewardData["reward_id"],
             "transaction_attributes" => [
@@ -239,6 +259,12 @@ class ApplyPoint implements HttpPostActionInterface
             ],
             "status" => "pending"
         ];
+    
+        if ($rewardData["rule"] === "flexible_points_reward" && isset($rewardData["points_to_be_redeemed"])) {
+            $params["points_to_be_redeemed"] = (int)$rewardData["points_to_be_redeemed"];
+        }
+    
+        return $params;
     }
 
     /**

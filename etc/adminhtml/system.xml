@@ -14,6 +14,19 @@
                     <label>Enable the loyalty rewards module</label>
                     <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
                 </field>
+                <field id="auto_enrollment" translate="label" type="select" sortOrder="15" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Auto Enrollment</label>
+                    <comment>Enroll the member in the program automatically.</comment>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                </field>
+                <field id="opt_in_field_name" translate="label" type="text" sortOrder="16" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Customer Opt-in Attribute Code</label>
+                    <comment>This is required only for Manual Enrollment. Please ensure customer attribute is present.</comment>
+                    <depends>
+                        <field id="auto_enrollment">0</field>
+                    </depends>
+                    <validate>required-entry</validate>
+                </field>
                 <field id="partner_id" showInDefault="1" showInStore="0" showInWebsite="1" sortOrder="20" translate="label" type="text">
                     <label>Add Partner id</label>
                     <comment>
@@ -71,7 +84,7 @@
                     </comment>
                 </field>
 
-                <field id="product_page_rewards_point_enable" showInDefault="1" showInStore="0" showInWebsite="1" sortOrder="40" translate="label" type="select">
+                <field id="product_page_rewards_point_enable" showInDefault="1" showInStore="0" showInWebsite="1" sortOrder="38" translate="label" type="select">
                     <label>Enable reward points text on product pages</label>
                     <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
                     <depends>
@@ -79,7 +92,7 @@
                     </depends>
                 </field>
 
-                <field id="product_page_reward_label" showInDefault="1" showInStore="1" showInWebsite="1" sortOrder="42" translate="label" type="text" canRestore="1">
+                <field id="product_page_reward_label" showInDefault="1" showInStore="1" showInWebsite="1" sortOrder="40" translate="label" type="text" canRestore="1">
                     <label>Reward points text on product pages</label>
                     <comment>
                         <![CDATA[
@@ -87,6 +100,30 @@
                         ]]>
                     </comment>
                     <validate>required-entry</validate>
+                    <depends>
+                        <field id="product_page_rewards_point_enable">1</field>
+                    </depends>
+                </field>
+
+                <field id="cart_page_rewards_point_enable" showInDefault="1" showInStore="0" showInWebsite="1" sortOrder="41" translate="label" type="select">
+                    <label>Enable reward points text on cart page</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <depends>
+                        <field id="loyalty_rewards_active">1</field>
+                    </depends>
+                </field>
+
+                <field id="cart_page_reward_label" showInDefault="1" showInStore="1" showInWebsite="1" sortOrder="42" translate="label" type="text" canRestore="1">
+                    <label>Reward points text on cart page</label>
+                    <comment>
+                        <![CDATA[
+                            Use <strong>{{EARN_POINTS}}</strong> for showing the value of points that can be earned.
+                        ]]>
+                    </comment>
+                    <validate>required-entry</validate>
+                    <depends>
+                        <field id="cart_page_rewards_point_enable">1</field>
+                    </depends>
                 </field>
 
                 <field id="rewards_event_drop_down_active" showInDefault="1" showInStore="0" showInWebsite="1" sortOrder="43" translate="label" type="select">

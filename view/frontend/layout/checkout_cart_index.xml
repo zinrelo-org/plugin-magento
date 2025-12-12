@@ -1,11 +1,26 @@
 <?xml version="1.0"?>
 <page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
       xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+    <head>
+        <css src="Zinrelo_LoyaltyRewards::css/reward-list.css"/>
+    </head>
     <body>
         <referenceBlock name="checkout.cart.container">
-            <block class="Zinrelo\LoyaltyRewards\Block\Cart\RewardList" name="reward.points" as="rewardlist"
-                   template="Zinrelo_LoyaltyRewards::cart/RewardList.phtml" after="cart.discount"/>
+            <block class="Magento\Framework\View\Element\Template"
+                name="zinrelo.cart.reward.points"
+                template="Zinrelo_LoyaltyRewards::cart/reward_points.phtml"
+                before="form">
+                <arguments>
+                    <argument name="viewModel" xsi:type="object">Zinrelo\LoyaltyRewards\ViewModel\ProductView</argument>
+                </arguments>
+            </block>
         </referenceBlock>
+        <referenceContainer name="checkout.cart.container">
+            <block class="Zinrelo\LoyaltyRewards\Block\Cart\RewardList"
+                name="reward.points" as="rewardlist"
+                template="Zinrelo_LoyaltyRewards::cart/RewardList.phtml"
+            />
+        </referenceContainer>
         <referenceBlock name="checkout.cart.totals">
             <arguments>
                 <argument name="jsLayout" xsi:type="array">

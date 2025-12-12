@@ -1,0 +1,18 @@
+<script type="text/javascript">
+    require(['cartPoints'], function (cartPoints) {
+        cartPoints();
+    });
+</script>
+
+<?php
+$viewModel = $block->getData('viewModel');
+if ($viewModel->isPdpAtCartEnabled()) {
+    $rewardLabel = $viewModel->getRewardLabelAtCartPage();
+    if (str_contains($rewardLabel, "{{EARN_POINTS}}")) {
+        $rewardLabel = str_replace("{{EARN_POINTS}}", "<span class='zinrelo-product-price' id='zinrelo_cart_total_points' style='font-weight:bold;' data-zrl-cart-points></span>", $rewardLabel);
+    } else {
+        $rewardLabel = "<span class='zinrelo-product-price' id='zinrelo_cart_total_points' data-zrl-cart-points></span>" . $rewardLabel;
+    }
+    ?>
+    <div> <?=  /* @noEscape */  $rewardLabel;?> </div>
+<?php } ?>
