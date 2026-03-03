@@ -63,15 +63,6 @@
                     </depends>
                 </field>
 
-                <field id="member_identifier" showInDefault="1" showInStore="0" showInWebsite="1" sortOrder="32" translate="label" type="select">
-                    <label>Member Identifier</label>
-                    <comment>Choose whether to use Member ID or Member Email when sending requests to TrueLoyal.</comment>
-                    <source_model>TrueLoyal\LoyaltyRewards\Model\System\Config\MemberIdentifier</source_model>
-                    <depends>
-                        <field id="loyalty_rewards_active">1</field>
-                    </depends>
-                </field>
-
                 <field id="web_hook_url" showInDefault="1" showInStore="0" showInWebsite="1" sortOrder="35" translate="label" type="text">
                     <label>Webhook URL</label>
                     <comment><![CDATA[This field is optional.]]></comment>
@@ -184,6 +175,32 @@
                     <label>Languages(Locale)</label>
                     <comment>Value Pass Like : {"fr": "french", "es": "spanish", "hi": "custom language one"}</comment>
                 </field>
+
+                <field id="member_identifier" showInDefault="1" showInStore="0" showInWebsite="1" sortOrder="75" translate="label" type="select">
+                    <label>Member Identifier</label>
+                    <comment>Choose whether to use Member ID or Member Email when sending requests to TrueLoyal.</comment>
+                    <source_model>TrueLoyal\LoyaltyRewards\Model\System\Config\MemberIdentifier</source_model>
+                    <depends>
+                        <field id="loyalty_rewards_active">1</field>
+                    </depends>
+                </field>
+
+                <group id="custom_member_attributes" showInDefault="1" showInStore="1" showInWebsite="1" sortOrder="80" translate="label">
+                    <label>Custom Member Attributes</label>
+                    <comment>
+                        <![CDATA[
+                            This is optional<br>
+                            Enter names of TrueLoyal Member Custom Attributes corresponding to Magento data fields below.<br>
+                            <strong>Note:</strong> These custom attributes must be created in TrueLoyal before typing them here.
+                        ]]>
+                    </comment>
+                    <field id="store_id" showInDefault="1" showInStore="1" showInWebsite="1" sortOrder="10" translate="label" type="text">
+                        <label>Store ID</label>
+                    </field>
+                    <field id="store_currency" showInDefault="1" showInStore="1" showInWebsite="1" sortOrder="20" translate="label" type="text">
+                        <label>Store Currency</label>
+                    </field>
+                </group>
             </group>
         </section>
     </system>

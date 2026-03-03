@@ -153,7 +153,17 @@ class Index implements HttpPostActionInterface
             $street = isset($billingAddress['street']) ? explode("\n", $billingAddress['street']) : [];
             $country = isset($billingAddress['country_id']) ? $this->getCountryName($billingAddress['country_id']) : "";
             $storeId = (string)$customer->getStoreId();
+            $storeCurrency = $this->helper->getStoreCurrencyCode();
             $memberIdentifierValue = $this->helper->getMemberIdentifierValue();
+        }
+        $customAttributes = [];
+        $customStoreIdKey = $this->helper->getCustomMemberStoreId();
+        $customStoreCurrencyKey = $this->helper->getCustomMemberStoreCurrency();
+        if ($customStoreIdKey) {
+            $customAttributes[$customStoreIdKey] = $storeId ?? '';
+        }
+        if ($customStoreCurrencyKey) {
+            $customAttributes[$customStoreCurrencyKey] = $storeCurrency ?? '';
         }
         $payload = [
             'member_id' => $memberIdentifierValue ?? '',
@@ -172,9 +182,7 @@ class Index implements HttpPostActionInterface
                 'country' => $country,
                 'postal_code' => $postcode,
             ],
-            'custom_attributes' => [
-                'store_id' => $storeId 
-            ],
+            'custom_attributes' => $customAttributes,
             'exp' => round(microtime(true) * 1000)
         ];
 

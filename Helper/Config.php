@@ -69,6 +69,8 @@ class Config extends AbstractHelper
     public const XML_PATH_AUTO_ENROLLMENT = 'trueloyal_loyaltyRewards/settings/auto_enrollment';
     public const XML_PATH_OPT_IN_FIELD_NAME = 'trueloyal_loyaltyRewards/settings/opt_in_field_name';
     public const XML_PATH_MEMBER_IDENTIFIER = 'trueloyal_loyaltyRewards/settings/member_identifier';
+    public const XML_PATH_CUSTOM_MEMBER_STORE_ID = 'trueloyal_loyaltyRewards/settings/custom_member_attributes/store_id';
+    public const XML_PATH_CUSTOM_MEMBER_STORE_CURRENCY = 'trueloyal_loyaltyRewards/settings/custom_member_attributes/store_currency';
 
     /**
      * Cookie life time
@@ -748,6 +750,36 @@ class Config extends AbstractHelper
     public function getMemberIdentifier(): string
     {
         return $this->getConfig(self::XML_PATH_MEMBER_IDENTIFIER) ?? 'member_email';
+    }
+
+    /**
+     * Get Custom Member Attribute: Store ID
+     *
+     * @return string
+     */
+    public function getCustomMemberStoreId(): string
+    {
+        return $this->getConfig(self::XML_PATH_CUSTOM_MEMBER_STORE_ID) ?? '';
+    }
+
+    /**
+     * Get Custom Member Attribute: Store Currency
+     *
+     * @return string
+     */
+    public function getCustomMemberStoreCurrency(): string
+    {
+        return $this->getConfig(self::XML_PATH_CUSTOM_MEMBER_STORE_CURRENCY) ?? '';
+    }
+
+    /**
+     * Get current store currency code
+     *
+     * @return string
+     */
+    public function getStoreCurrencyCode(): string
+    {
+        return $this->storeManager->getStore()->getCurrentCurrencyCode() ?? '';
     }
 
     /**
