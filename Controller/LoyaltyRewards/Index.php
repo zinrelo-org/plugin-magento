@@ -1,6 +1,6 @@
 <?php
 
-namespace Zinrelo\LoyaltyRewards\Controller\LoyaltyRewards;
+namespace TrueLoyal\LoyaltyRewards\Controller\LoyaltyRewards;
 
 use Firebase\JWT\JWT;
 use Magento\Customer\Model\CustomerFactory;
@@ -14,7 +14,7 @@ use Magento\Framework\Controller\ResultInterface;
 use Magento\Framework\Locale\Resolver;
 use Magento\Framework\Serialize\SerializerInterface;
 use Magento\Framework\View\Result\Layout;
-use Zinrelo\LoyaltyRewards\Helper\Data;
+use TrueLoyal\LoyaltyRewards\Helper\Data;
 
 class Index implements HttpPostActionInterface
 {
@@ -132,8 +132,8 @@ class Index implements HttpPostActionInterface
         if ($customerId && !$this->helper->isAutoEnrollmentEnabled() ) {
             $customerData = $this->customerRepository->getById($customerId);
             $opt_in_attribute = $this->helper->getOptInAttributeCode();
-            $zinreloOptedIn = $customerData->getCustomAttribute($opt_in_attribute);
-            if (!$zinreloOptedIn || !$zinreloOptedIn->getValue()) {
+            $trueloyalOptedIn = $customerData->getCustomAttribute($opt_in_attribute);
+            if (!$trueloyalOptedIn || !$trueloyalOptedIn->getValue()) {
                 return $resultJson->setData([]);
             }
         }
@@ -152,10 +152,11 @@ class Index implements HttpPostActionInterface
             $postcode = $billingAddress['postcode'] ?? "";
             $street = isset($billingAddress['street']) ? explode("\n", $billingAddress['street']) : [];
             $country = isset($billingAddress['country_id']) ? $this->getCountryName($billingAddress['country_id']) : "";
+            $storeId = (string)$customer->getStoreId();
+            $formattedMemberId = str_pad((string)$customerId, 3, "0", STR_PAD_LEFT);
         }
-
         $payload = [
-            'member_id' => $customerEmail,
+            'member_id' => $formattedMemberId ?? '',
             'sub' => $apiKeyIdentifier,
             'email_address' => $customerEmail,
             'first_name' => $customerFirstName,
@@ -171,11 +172,14 @@ class Index implements HttpPostActionInterface
                 'country' => $country,
                 'postal_code' => $postcode,
             ],
+            'custom_attributes' => [
+                'store_id' => $storeId 
+            ],
             'exp' => round(microtime(true) * 1000)
         ];
 
         $data = $this->jwt->encode($payload, $key, 'HS256');
-        if ($customerEmail) {
+        if ($formattedMemberId) {
             $this->helper->setCookie($data);
             $isSetCookies = true;
         }

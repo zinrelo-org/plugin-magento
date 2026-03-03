@@ -1,6 +1,6 @@
 <?php
 
-namespace Zinrelo\LoyaltyRewards\Observer;
+namespace TrueLoyal\LoyaltyRewards\Observer;
 
 use Exception;
 use Magento\Framework\Api\SearchCriteriaBuilder;
@@ -10,8 +10,8 @@ use Magento\Framework\Event\ObserverInterface;
 use Magento\Framework\Webapi\Rest\Request as RestRequest;
 use Magento\Sales\Api\InvoiceRepositoryInterface;
 use Magento\Sales\Model\OrderFactory;
-use Zinrelo\LoyaltyRewards\Helper\Data;
-use Zinrelo\LoyaltyRewards\Helper\OrderComplete;
+use TrueLoyal\LoyaltyRewards\Helper\Data;
+use TrueLoyal\LoyaltyRewards\Helper\OrderComplete;
 
 class OrderFullInvoicePaid implements ObserverInterface
 {
@@ -74,7 +74,7 @@ class OrderFullInvoicePaid implements ObserverInterface
     }
 
     /**
-     * Send order paid event to zinrelo
+     * Send order paid event to trueloyal
      *
      * @param Observer $observer
      * @return bool
@@ -130,8 +130,14 @@ class OrderFullInvoicePaid implements ObserverInterface
             }
             $invoicesItems['coupon_code'] = $couponCode;
             $invoicesItems['order_id'] = $replacedOrderId;
+            $customerId = $order->getCustomerId();
+            if ($customerId) {
+                $formattedMemberId = str_pad((string)$customerId, 3, "0", STR_PAD_LEFT);
+            } else {
+                $formattedMemberId = $order->getCustomerEmail();
+            }
             $params = [
-                "member_id" => $order->getCustomerEmail(),
+                "member_id" => $formattedMemberId,
                 "activity_id" => "order_paid",
                 "data" => $invoicesItems
             ];

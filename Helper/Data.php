@@ -1,13 +1,13 @@
 <?php
 
-namespace Zinrelo\LoyaltyRewards\Helper;
+namespace TrueLoyal\LoyaltyRewards\Helper;
 
 use Magento\Customer\Api\Data\CustomerInterface;
 
 class Data extends Config
 {
     /**
-     * Set zinrelo reward when order from Admin, and get OrderID for Zinrelo
+     * Set trueloyal reward when order from Admin, and get OrderID for TrueLoyal
      *
      * @param mixed $orderId
      * @param bool $isset
@@ -19,9 +19,9 @@ class Data extends Config
         /*This condition only true when $isset passed as false.
         We have passed false when it needed else this condition will not true and order will not nested save*/
         if (!$isset) {
-            $zinreloOrder = $this->getZinreloOrderByOrderId($orderId);
-            $zinreloOrder->setZinreloReward("{}")->setOrderId($orderId);
-            $zinreloOrder->save();
+            $trueloyalOrder = $this->getTrueLoyalOrderByOrderId($orderId);
+            $trueloyalOrder->setTrueLoyalReward("{}")->setOrderId($orderId);
+            $trueloyalOrder->save();
         }
         return $order->getIncrementId();
     }
@@ -37,8 +37,8 @@ class Data extends Config
         $order = $this->orderRepository->get($orderId);
         $quoteID = $order->getQuoteId();
         $quote = $this->quoteFactory->create()->load($quoteID);
-        $zinreloQuote = $this->getZinreloQuoteByQuoteId($quote->getId());
-        $redeemReward = $zinreloQuote->getRedeemRewardDiscount();
+        $trueloyalQuote = $this->getTrueLoyalQuoteByQuoteId($quote->getId());
+        $redeemReward = $trueloyalQuote->getRedeemRewardDiscount();
         $rewardData = $this->getRewardRulesData($quote, $redeemReward);
         $discountAmount = "";
         $discountLabel = "";
@@ -102,7 +102,7 @@ class Data extends Config
     }
 
     /**
-     * Send Reject reward point API request to Zinrelo when cart gone Abandoned or Redeem Cancel button clicked
+     * Send Reject reward point API request to TrueLoyal when cart gone Abandoned or Redeem Cancel button clicked
      *
      * @param Quote $quote
      * @return bool
@@ -110,24 +110,24 @@ class Data extends Config
     public function sendRejectRewardRequest($quote)
     {
         try {
-            $zinreloQuote = $this->getZinreloQuoteByQuoteId($quote->getId());
-            $redeemReward = $zinreloQuote->getRedeemRewardDiscount();
+            $trueloyalQuote = $this->getTrueLoyalQuoteByQuoteId($quote->getId());
+            $redeemReward = $trueloyalQuote->getRedeemRewardDiscount();
             $rewardData = $this->getRewardRulesData($quote, $redeemReward);
             if (!empty($rewardData)) {
                 $url = $this->getLiveWebHookUrl() . "transactions/" . $rewardData['id'] . "/reject";
                 $this->request($url, "", "post", "live_api");
                 $items = $quote->getAllItems();
                 foreach ($items as $item) {
-                    $zinreloQuoteItem = $this->getZinreloQuoteItemByItemId($item->getId());
-                    if ($zinreloQuoteItem->getIsZinreloFreeProduct()) {
+                    $trueloyalQuoteItem = $this->getTrueLoyalQuoteItemByItemId($item->getId());
+                    if ($trueloyalQuoteItem->getIsTrueLoyalFreeProduct()) {
                         $item->delete();
                         $item->save();
                         break;
                     }
                 }
-                $zinreloQuote->setRedeemRewardDiscount('');
-                $zinreloQuote->setRewardRulesData('');
-                $zinreloQuote->save();
+                $trueloyalQuote->setRedeemRewardDiscount('');
+                $trueloyalQuote->setRewardRulesData('');
+                $trueloyalQuote->save();
                 return true;
             }
         } catch (Exception $e) {
@@ -168,14 +168,14 @@ class Data extends Config
     }
 
     /**
-     * Request to Zinrelo for order_create
+     * Request to TrueLoyal for order_create
      *
      * @param string $id
      * @param string $replacedOrderId
      * @return bool
      * @throws NoSuchEntityException
      */
-    public function createZinreloOrder($id, $replacedOrderId)
+    public function createTrueLoyalOrder($id, $replacedOrderId)
     {
         $order = $this->orderRepository->get($id);
         $couponCode = $this->getCouponCodes($order);
@@ -197,9 +197,9 @@ class Data extends Config
                 continue;
             }
             $quote = $this->quoteRepository->get($order->getQuoteId());
-            $zinreloQuote = $this->getZinreloQuoteByQuoteId($order->getQuoteId());
-            if (!empty($zinreloQuote->getRedeemRewardDiscount())) {
-                $redeemReward = $zinreloQuote->getRedeemRewardDiscount();
+            $trueloyalQuote = $this->getTrueLoyalQuoteByQuoteId($order->getQuoteId());
+            if (!empty($trueloyalQuote->getRedeemRewardDiscount())) {
+                $redeemReward = $trueloyalQuote->getRedeemRewardDiscount();
                 $rewardData = $this->getRewardRulesData($quote, $redeemReward);
                 if ($rewardData) {
                     $discountValue = $rewardData['reward_value'];
@@ -287,8 +287,14 @@ class Data extends Config
             }
         }
         $orderData['total_qty_ordered'] = (int)$orderData['total_qty_ordered'];
+        $customerId = $order->getCustomerId();
+        if ($customerId) {
+            $formattedMemberId = str_pad((string)$customerId, 3, "0", STR_PAD_LEFT);
+        } else {
+            $formattedMemberId = $order->getCustomerEmail();
+        }
         $params = [
-            "member_id" => $order->getCustomerEmail(),
+            "member_id" => $formattedMemberId,
             "activity_id" => "order_create",
             "data" => $orderData
         ];

@@ -1,11 +1,11 @@
 <?php
 
-namespace Zinrelo\LoyaltyRewards\Observer;
+namespace TrueLoyal\LoyaltyRewards\Observer;
 
 use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
 use Magento\Sales\Api\OrderRepositoryInterface;
-use Zinrelo\LoyaltyRewards\Helper\Data;
+use TrueLoyal\LoyaltyRewards\Helper\Data;
 
 class OrderCancel implements ObserverInterface
 {
@@ -34,7 +34,7 @@ class OrderCancel implements ObserverInterface
     }
 
     /**
-     * Order cancel event to zinrelo
+     * Order cancel event to trueloyal
      *
      * @param Observer $observer
      * @return bool
@@ -80,8 +80,14 @@ class OrderCancel implements ObserverInterface
                 $orderData['items'][] = $orderItemData;
             }
             $orderData['total_qty_ordered'] = (int)$orderData['total_qty_ordered'];
+            $customerId = $order->getCustomerId();
+            if ($customerId) {
+                $formattedMemberId = str_pad((string)$customerId, 3, "0", STR_PAD_LEFT);
+            } else {
+                $formattedMemberId = $order->getCustomerEmail();
+            }
             $params = [
-                "member_id" => $order->getCustomerEmail(),
+                "member_id" => $formattedMemberId,
                 "activity_id" => "order_cancel",
                 "data" => $orderData
             ];

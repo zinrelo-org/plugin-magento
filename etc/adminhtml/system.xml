@@ -1,13 +1,13 @@
 <?xml version="1.0"?>
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Config:etc/system_file.xsd">
     <system>
-        <tab id="zinrelo_loyaltyRewards" sortOrder="999" translate="label">
-            <label>Zinrelo Loyalty Rewards</label>
+        <tab id="trueloyal_loyaltyRewards" sortOrder="999" translate="label">
+            <label>TrueLoyal Loyalty Rewards</label>
         </tab>
-        <section id="zinrelo_loyaltyRewards" showInDefault="1" showInStore="1" showInWebsite="1" sortOrder="10" translate="label">
-            <label>Zinrelo Settings</label>
-            <tab>zinrelo_loyaltyRewards</tab>
-            <resource>Zinrelo_LoyaltyRewards::config</resource>
+        <section id="trueloyal_loyaltyRewards" showInDefault="1" showInStore="1" showInWebsite="1" sortOrder="10" translate="label">
+            <label>TrueLoyal Settings</label>
+            <tab>trueloyal_loyaltyRewards</tab>
+            <resource>TrueLoyal_LoyaltyRewards::config</resource>
             <group id="settings" showInDefault="1" showInStore="1" showInWebsite="1" sortOrder="10" translate="label">
                 <label>Settings</label>
                 <field id="loyalty_rewards_active" showInDefault="1" showInStore="0" showInWebsite="1" sortOrder="10" translate="label" type="select">
@@ -31,7 +31,7 @@
                     <label>Add Partner id</label>
                     <comment>
                         <![CDATA[
-                            To get <strong>Partner id</strong> refer to <a href="https://help.zinrelo.com/reference/authentication" target="_blank">URL</a>.
+                            To get <strong>Partner id</strong> refer to <a href="https://help.trueloyal.com/reference/authentication" target="_blank">URL</a>.
                         ]]>
                     </comment>
                     <depends>
@@ -43,7 +43,7 @@
                     <label>Add API Key</label>
                     <comment>
                         <![CDATA[
-                            To get <strong>API Key</strong> refer to <a href="https://help.zinrelo.com/reference/authentication" target="_blank">URL</a>.
+                            To get <strong>API Key</strong> refer to <a href="https://help.trueloyal.com/reference/authentication" target="_blank">URL</a>.
                         ]]>
                     </comment>
                     <depends>
@@ -55,7 +55,7 @@
                     <label>Add API Key Identifier</label>
                     <comment>
                         <![CDATA[
-                            To get <strong>API Key Identifier</strong> refer to <a href="https://help.zinrelo.com/reference/web-api-authentication#where-can-i-find-api-key-and-api-key-identifier" target="_blank">URL</a>.
+                            To get <strong>API Key Identifier</strong> refer to <a href="https://help.trueloyal.com/reference/web-api-authentication#where-can-i-find-api-key-and-api-key-identifier" target="_blank">URL</a>.
                         ]]>
                     </comment>
                     <depends>
@@ -79,7 +79,7 @@
                     </depends>
                     <comment>
                         <![CDATA[
-                            Please note that this will remove Zinrelo dashboard as well as points on product page for all guest users.
+                            Please note that this will remove TrueLoyal dashboard as well as points on product page for all guest users.
                         ]]>
                     </comment>
                 </field>
@@ -151,8 +151,8 @@
                 <field id="reward_events" translate="label" type="multiselect" sortOrder="60" showInDefault="1"
                        showInWebsite="1" showInStore="0">
                     <label>Reward Events</label>
-                    <source_model>Zinrelo\LoyaltyRewards\Model\System\Config\EventsSelection</source_model>
-                    <comment>Only selected events will be sent to Zinrelo</comment>
+                    <source_model>TrueLoyal\LoyaltyRewards\Model\System\Config\EventsSelection</source_model>
+                    <comment>Only selected events will be sent to TrueLoyal</comment>
                     <depends>
                         <field id="loyalty_rewards_active">1</field>
                     </depends>

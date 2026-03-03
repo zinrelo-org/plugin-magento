@@ -1,6 +1,6 @@
 {
-    "name": "zinrelo/extension",
-    "description": "Zinrelo Reward Point Integration Extension",
+    "name": "trueloyal/extension",
+    "description": "TrueLoyal Reward Point Integration Extension",
     "type": "magento2-module",
     "version": "2.4.0",
     "require": {
@@ -16,7 +16,7 @@
             "registration.php"
         ],
         "psr-4": {
-            "Zinrelo\\LoyaltyRewards\\": ""
+            "TrueLoyal\\LoyaltyRewards\\": ""
         }
     }
 }

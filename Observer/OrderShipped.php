@@ -1,14 +1,14 @@
 <?php
 
-namespace Zinrelo\LoyaltyRewards\Observer;
+namespace TrueLoyal\LoyaltyRewards\Observer;
 
 use Exception;
 use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
-use Zinrelo\LoyaltyRewards\Helper\Data;
+use TrueLoyal\LoyaltyRewards\Helper\Data;
 use Magento\Sales\Api\ShipmentRepositoryInterface;
 use Magento\Framework\Api\SearchCriteriaBuilder;
-use Zinrelo\LoyaltyRewards\Helper\OrderComplete;
+use TrueLoyal\LoyaltyRewards\Helper\OrderComplete;
 
 class OrderShipped implements ObserverInterface
 {
@@ -52,7 +52,7 @@ class OrderShipped implements ObserverInterface
     }
 
     /**
-     * Order shipped event to zinrelo
+     * Order shipped event to trueloyal
      *
      * @param Observer $observer
      * @return bool
@@ -63,7 +63,7 @@ class OrderShipped implements ObserverInterface
         $shipment = $observer->getEvent()->getShipment();
         $order = $shipment->getOrder();
         $this->orderCompleteHelper->getCompletedOrder($order);
-        /*Check the order_shipped event is enabled, if enabled then will send order_shipped event to Zinrelo*/
+        /*Check the order_shipped event is enabled, if enabled then will send order_shipped event to TrueLoyal*/
         if (in_array('order_shipped', $event)) {
             if (!$order->canShip()) {
                 try {
@@ -126,8 +126,14 @@ class OrderShipped implements ObserverInterface
                     $shipmentItems['order_base_subtotal'] = (float)$order->getBaseSubtotal();
                     $shipmentItems['order_grand_total'] = (float)$order->getGrandTotal();
                     $shipmentItems['order_base_grand_total'] = (float)$order->getBaseGrandTotal();
+                    $customerId = $order->getCustomerId();
+                    if ($customerId) {
+                        $formattedMemberId = str_pad((string)$customerId, 3, "0", STR_PAD_LEFT);
+                    } else {
+                        $formattedMemberId = $order->getCustomerEmail();
+                    }
                     $params = [
-                        "member_id" => $order->getCustomerEmail(),
+                        "member_id" => $formattedMemberId,
                         "activity_id" => "order_shipped",
                         "data" => $shipmentItems
                     ];

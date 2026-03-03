@@ -1,9 +1,9 @@
 <?php
 
-namespace Zinrelo\LoyaltyRewards\Block;
+namespace TrueLoyal\LoyaltyRewards\Block;
 
 use Magento\Framework\View\Element\Template;
-use Zinrelo\LoyaltyRewards\Helper\Config;
+use TrueLoyal\LoyaltyRewards\Helper\Config;
 
 class Dashboard extends Template
 {

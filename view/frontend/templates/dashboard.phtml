@@ -9,21 +9,21 @@ $partnerId = $block->getPartnerId();
     require.config({
         map: {
             '*': {
-                'zinrelo': 'https://cdn.zinrelo.com/js/all.js'
+                'trueloyal': 'https://cdn.trueloyal.com/js/all.js'
             }
         }
     });
 
     require([
             'jquery',
-            'zinrelo',
+            'trueloyal',
             'js-cookie/cookie-wrapper'
         ],
-        function ($, zinrelo,) {
+        function ($, trueloyal,) {
             $(document).ready(function () {
                 // Your AJAX request code here
                 let url = window.BASE_URL + "loyaltyRewards/loyaltyrewards/index";
-                let isRequest = $.cookie('zinrelo');
+                let isRequest = $.cookie('trueloyal');
                 if (!isRequest | undefined) {
                     $.ajax({
                         url: url, // Adjust the URL as needed
@@ -35,7 +35,7 @@ $partnerId = $block->getPartnerId();
                                 "partner_id": response.partnerId,
                                 "jwt_token": response.tokenData,
                                 "version": "v2",
-                                "server": "https://app.zinrelo.com"
+                                "server": "https://app.trueloyal.com"
                             };
                             _zrl.push(['init', init_data]);
                         },
@@ -48,7 +48,7 @@ $partnerId = $block->getPartnerId();
                         "partner_id": "<?= /* @noEscape */ $partnerId ?>",
                         "jwt_token": isRequest,
                         "version": "v2",
-                        "server": "https://app.zinrelo.com"
+                        "server": "https://app.trueloyal.com"
                     };
                     _zrl.push(['init', init_data]);
                 }
