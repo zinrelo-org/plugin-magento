@@ -88,9 +88,8 @@ class ProductReviewSaveAfter implements ObserverInterface
         $reviewData['product_url'] = $productInfo['product_url'];
         $reviewData['product_image_url'] = $productInfo['product_image_url'];
         $reviewData['category_name'] = $this->helper->getCategoryName($productId);
-        $formattedMemberId = str_pad((string)$customerId, 3, "0", STR_PAD_LEFT);
         $params = [
-            "member_id" => $formattedMemberId,
+            "member_id" => $this->helper->getMemberIdentifierValueById($customerId),
             "activity_id" => $activityId,
             "data" => $reviewData
         ];

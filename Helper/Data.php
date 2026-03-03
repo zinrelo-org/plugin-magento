@@ -64,6 +64,28 @@ class Data extends Config
     }
 
     /**
+     * Get member identifier value from a customer ID and email (for order/customer event context).
+     * Returns formatted ID when setting is member_id, email otherwise.
+     * Falls back to email when customer ID is absent (guest).
+     *
+     * @param int|null $customerId
+     * @param string|null $email
+     * @return string
+     */
+    public function getMemberIdentifierValueById($customerId, $email = null): string
+    {
+        if ($this->getMemberIdentifier() === 'member_id') {
+            return $customerId
+                ? str_pad((string)$customerId, 3, "0", STR_PAD_LEFT)
+                : ($email ?? '');
+        }
+        if ($email !== null) {
+            return $email;
+        }
+        return $customerId ? ($this->getCustomerEmailById($customerId) ?? '') : '';
+    }
+
+    /**
      * Get Customer Email By Id
      *
      * @param mixed $customerId
@@ -287,14 +309,8 @@ class Data extends Config
             }
         }
         $orderData['total_qty_ordered'] = (int)$orderData['total_qty_ordered'];
-        $customerId = $order->getCustomerId();
-        if ($customerId) {
-            $formattedMemberId = str_pad((string)$customerId, 3, "0", STR_PAD_LEFT);
-        } else {
-            $formattedMemberId = $order->getCustomerEmail();
-        }
         $params = [
-            "member_id" => $formattedMemberId,
+            "member_id" => $this->getMemberIdentifierValueById($order->getCustomerId(), $order->getCustomerEmail()),
             "activity_id" => "order_create",
             "data" => $orderData
         ];

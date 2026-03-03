@@ -153,10 +153,10 @@ class Index implements HttpPostActionInterface
             $street = isset($billingAddress['street']) ? explode("\n", $billingAddress['street']) : [];
             $country = isset($billingAddress['country_id']) ? $this->getCountryName($billingAddress['country_id']) : "";
             $storeId = (string)$customer->getStoreId();
-            $formattedMemberId = str_pad((string)$customerId, 3, "0", STR_PAD_LEFT);
+            $memberIdentifierValue = $this->helper->getMemberIdentifierValue();
         }
         $payload = [
-            'member_id' => $formattedMemberId ?? '',
+            'member_id' => $memberIdentifierValue ?? '',
             'sub' => $apiKeyIdentifier,
             'email_address' => $customerEmail,
             'first_name' => $customerFirstName,
@@ -179,7 +179,7 @@ class Index implements HttpPostActionInterface
         ];
 
         $data = $this->jwt->encode($payload, $key, 'HS256');
-        if ($formattedMemberId) {
+        if ($memberIdentifierValue ?? false) {
             $this->helper->setCookie($data);
             $isSetCookies = true;
         }

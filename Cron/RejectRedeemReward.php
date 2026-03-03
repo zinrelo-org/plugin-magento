@@ -110,7 +110,10 @@ class RejectRedeemReward
                             $qItem = $this->helper->setFormatedPrice($qItem);
                             $quoteData["items"][] = $qItem;
                         }
-                        $memberId = $item->getCustomer() ? $item->getCustomer()->getEmail() : "";
+                        $memberId = $this->helper->getMemberIdentifierValueById(
+                            $item->getCustomerId(),
+                            $item->getCustomer() ? $item->getCustomer()->getEmail() : ""
+                        );
                         $this->sendToTrueLoyal($memberId, $quoteData, $url, $quoteObj);
                     }
                 }

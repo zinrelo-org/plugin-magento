@@ -178,14 +178,8 @@ class OrderRefund implements ObserverInterface
      */
     public function sendRequest($customerEmail, $activityId, $refundData)
     {
-        $customerId = $order->getCustomerId();
-        if ($customerId) {
-            $formattedMemberId = str_pad((string)$customerId, 3, "0", STR_PAD_LEFT);
-        } else {
-            $formattedMemberId = $customerEmail;
-        }
         $params = [
-            "member_id" => $formattedMemberId,
+            "member_id" => $this->helper->getMemberIdentifierValueById(null, $customerEmail),
             "activity_id" => $activityId,
             "data" => $refundData
         ];

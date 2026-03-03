@@ -50,9 +50,8 @@ class CustomerDelete implements ObserverInterface
             $customerId = $observer->getEvent()->getCustomer()->getEntityId();
             $customer = $this->customerRepository->getById($customerId);
             $customerData = $customer->__toArray();
-            $formattedMemberId = str_pad((string)$customerId, 3, "0", STR_PAD_LEFT);
             $params = [
-                "member_id" => $formattedMemberId,
+                "member_id" => $this->helper->getMemberIdentifierValueById($customerId, $customer->getEmail()),
                 "activity_id" => "customer_delete",
                 "data" => $customerData
             ];

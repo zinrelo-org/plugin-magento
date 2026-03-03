@@ -3,12 +3,12 @@ $quote = $block->helper->getQuote();
 $trueloyalQuote = $this->helper->getTrueLoyalQuoteByQuoteId($quote->getId());
 $redeemReward = $trueloyalQuote->getRedeemRewardDiscount();
 $rewardData = $block->helper->getRewardRulesData($quote, $redeemReward);
-$memberId = $block->helper->getFormattedMemberId();
+$memberIdentifierValue = $block->helper->getMemberIdentifierValue();
 $points = $block->getRewardPoints();
 $redeemUrl = $block->getFormAction();
 $redeemRules = $block->getRedeemRules();
 $isEnabled = $block->helper->isRewardDropDownEnable();
-if (($isEnabled && !empty($memberId) && $points != "error" && !empty($redeemRules)) ||
+if (($isEnabled && !empty($memberIdentifierValue) && $points != "error" && !empty($redeemRules)) ||
     ($isEnabled && $trueloyalQuote->getRewardRulesData() != "")
 ) {
     $points = ($points == "error") ? 0 : $points;

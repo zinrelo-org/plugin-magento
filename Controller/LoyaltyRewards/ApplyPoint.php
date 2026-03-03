@@ -246,10 +246,8 @@ class ApplyPoint implements HttpPostActionInterface
      */
     public function getParamsData($rewardData)
     {
-        $customerId = $this->customerSession->getCustomerId();
-        $formattedMemberId = str_pad((string)$customerId, 3, "0", STR_PAD_LEFT);
         $params = [
-            "member_id" => $formattedMemberId,
+            "member_id" => $this->helper->getMemberIdentifierValue(),
             "reward_id" => $rewardData["reward_id"],
             "transaction_attributes" => [
                 "reason" => "redeem",

@@ -148,9 +148,8 @@ class CustomerSaveAfter implements ObserverInterface
                 $customerData["addresses"][] = $customerAddressData;
             }
         }
-        $formattedMemberId = str_pad((string)$customerId, 3, "0", STR_PAD_LEFT);
         $params = [
-            "member_id" => $formattedMemberId,
+            "member_id" => $this->helper->getMemberIdentifierValueById($customerId, $customer->getEmail()),
             "activity_id" => $activity_id,
             "data" => $customerData
         ];

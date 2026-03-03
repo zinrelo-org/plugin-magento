@@ -68,6 +68,7 @@ class Config extends AbstractHelper
     public const XML_PATH_LANGUAGES = 'trueloyal_loyaltyRewards/settings/languages_mapping';
     public const XML_PATH_AUTO_ENROLLMENT = 'trueloyal_loyaltyRewards/settings/auto_enrollment';
     public const XML_PATH_OPT_IN_FIELD_NAME = 'trueloyal_loyaltyRewards/settings/opt_in_field_name';
+    public const XML_PATH_MEMBER_IDENTIFIER = 'trueloyal_loyaltyRewards/settings/member_identifier';
 
     /**
      * Cookie life time
@@ -550,8 +551,8 @@ class Config extends AbstractHelper
         $isModuleEnable = $this->isModuleEnabled();
         $isRewardPointAtPdpEnabled = $this->getConfig(self::XML_PATH_REWARDS_POINTS_AT_PDP) ?? false;
         $isDashboardHiddenForGuests = $this->isDashboardHiddenForGuests();
-        if($isDashboardHiddenForGuests && !$this->getFormattedMemberId()) { 
-            return false; 
+        if($isDashboardHiddenForGuests && !$this->getMemberIdentifierValue()) {
+            return false;
         }
         return ($isRewardPointAtPdpEnabled && $isModuleEnable) ?? false;
     }
@@ -576,7 +577,7 @@ class Config extends AbstractHelper
         $isModuleEnable = $this->isModuleEnabled();
         $isRewardPointAtCartEnabled = $this->getConfig(self::XML_PATH_PDP_CART_PAGE) ?? false;
         $isDashboardHiddenForGuests = $this->isDashboardHiddenForGuests();
-        if($isDashboardHiddenForGuests && !$this->getFormattedMemberId()) {
+        if($isDashboardHiddenForGuests && !$this->getMemberIdentifierValue()) {
             return false;
         }
         return ($isRewardPointAtCartEnabled && $isModuleEnable) ?? false;
@@ -687,7 +688,7 @@ class Config extends AbstractHelper
      */
     public function getRedeemRules()
     {
-        $memberId = $this->getFormattedMemberId();
+        $memberId = $this->getMemberIdentifierValue();
         $url = $this->getLiveWebHookUrl() . "members/" . $memberId . "/rewards";
         $url = $this->getIdParam($url);
         $response = $this->request($url, "", "get", "live_api");
@@ -737,6 +738,30 @@ class Config extends AbstractHelper
     public function getCustomerEmailBySession()
     {
         return $this->customerSession->create()->getCustomer()->getEmail() ?? '';
+    }
+
+    /**
+     * Get configured member identifier type ('member_id' or 'member_email')
+     *
+     * @return string
+     */
+    public function getMemberIdentifier(): string
+    {
+        return $this->getConfig(self::XML_PATH_MEMBER_IDENTIFIER) ?? 'member_email';
+    }
+
+    /**
+     * Get the member identifier value based on the configured type.
+     * Returns str_pad formatted customer ID for member_id, or customer email for member_email.
+     *
+     * @return string
+     */
+    public function getMemberIdentifierValue(): string
+    {
+        if ($this->getMemberIdentifier() === 'member_id') {
+            return $this->getFormattedMemberId();
+        }
+        return $this->getCustomerEmailBySession();
     }
 
     /**
@@ -929,7 +954,7 @@ class Config extends AbstractHelper
     public function getRewardPoints()
     {
         try {
-            $memberId = $this->getFormattedMemberId();
+            $memberId = $this->getMemberIdentifierValue();
             $url = $this->getLiveWebHookUrl() . "members/" . $memberId;
             $url = $this->getIdParam($url);
             $response = $this->request($url, "", "get", "live_api");

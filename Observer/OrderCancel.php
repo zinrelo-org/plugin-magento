@@ -80,14 +80,8 @@ class OrderCancel implements ObserverInterface
                 $orderData['items'][] = $orderItemData;
             }
             $orderData['total_qty_ordered'] = (int)$orderData['total_qty_ordered'];
-            $customerId = $order->getCustomerId();
-            if ($customerId) {
-                $formattedMemberId = str_pad((string)$customerId, 3, "0", STR_PAD_LEFT);
-            } else {
-                $formattedMemberId = $order->getCustomerEmail();
-            }
             $params = [
-                "member_id" => $formattedMemberId,
+                "member_id" => $this->helper->getMemberIdentifierValueById($order->getCustomerId(), $order->getCustomerEmail()),
                 "activity_id" => "order_cancel",
                 "data" => $orderData
             ];
