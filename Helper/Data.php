@@ -74,15 +74,23 @@ class Data extends Config
      */
     public function getMemberIdentifierValueById($customerId, $email = null): string
     {
+        $prefix = $this->getMemberIdentifierPrefix() ?? '';
         if ($this->getMemberIdentifier() === 'member_id') {
-            return $customerId
-                ? str_pad((string)$customerId, 3, "0", STR_PAD_LEFT)
-                : ($email ?? '');
+            if ($customerId) {
+                $customerIdStr = (string)$customerId;
+                if (strlen($prefix) + strlen($customerIdStr) < 3) {
+                    $padLength = max(0, 3 - strlen($prefix));
+                    return $prefix . str_pad($customerIdStr, $padLength, "0", STR_PAD_LEFT);
+                }
+                return $prefix . $customerIdStr;
+            }
+            return $email ? $prefix . $email : '';
         }
         if ($email !== null) {
-            return $email;
+            return $email ? $prefix . $email : '';
         }
-        return $customerId ? ($this->getCustomerEmailById($customerId) ?? '') : '';
+        $resolvedEmail = $customerId ? ($this->getCustomerEmailById($customerId) ?? '') : '';
+        return $resolvedEmail ? $prefix . $resolvedEmail : '';
     }
 
     /**

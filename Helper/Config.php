@@ -68,6 +68,7 @@ class Config extends AbstractHelper
     public const XML_PATH_LANGUAGES = 'trueloyal_loyaltyRewards/settings/languages_mapping';
     public const XML_PATH_AUTO_ENROLLMENT = 'trueloyal_loyaltyRewards/settings/auto_enrollment';
     public const XML_PATH_OPT_IN_FIELD_NAME = 'trueloyal_loyaltyRewards/settings/opt_in_field_name';
+    public const XML_PATH_MEMBER_IDENTIFIER_PREFIX = 'trueloyal_loyaltyRewards/settings/member_identifier_prefix';
     public const XML_PATH_MEMBER_IDENTIFIER = 'trueloyal_loyaltyRewards/settings/member_identifier';
     public const XML_PATH_CUSTOM_MEMBER_STORE_ID = 'trueloyal_loyaltyRewards/settings/custom_member_attributes/store_id';
     public const XML_PATH_CUSTOM_MEMBER_STORE_CURRENCY = 'trueloyal_loyaltyRewards/settings/custom_member_attributes/store_currency';
@@ -743,6 +744,16 @@ class Config extends AbstractHelper
     }
 
     /**
+     * Get configured member identifier prefix
+     *
+     * @return string
+     */
+    public function getMemberIdentifierPrefix(): string
+    {
+        return $this->getConfig(self::XML_PATH_MEMBER_IDENTIFIER_PREFIX) ?? '';
+    }
+        
+    /**
      * Get configured member identifier type ('member_id' or 'member_email')
      *
      * @return string
@@ -790,10 +801,13 @@ class Config extends AbstractHelper
      */
     public function getMemberIdentifierValue(): string
     {
+        $prefix = $this->getMemberIdentifierPrefix();
         if ($this->getMemberIdentifier() === 'member_id') {
-            return $this->getFormattedMemberId();
+            $value = $this->getFormattedMemberId($prefix);
+            return $value ?? '';
         }
-        return $this->getCustomerEmailBySession();
+        $value = $this->getCustomerEmailBySession();
+        return $value ? $prefix . $value : '';
     }
 
     /**
@@ -801,13 +815,18 @@ class Config extends AbstractHelper
      *
      * @return string
      */
-    public function getFormattedMemberId()
+    public function getFormattedMemberId($prefix = '')
     {
         $customerId = $this->customerSession->create()->getCustomerId();
         if (!$customerId) {
             return '';
         }
-        return str_pad((string)$customerId, 3, "0", STR_PAD_LEFT);
+        $customerIdStr = (string)$customerId;
+        if (strlen($prefix) + strlen($customerIdStr) < 3) {
+            $padLength = max(0, 3 - strlen($prefix));
+            return $prefix . str_pad($customerIdStr, $padLength, "0", STR_PAD_LEFT);
+        }
+        return $prefix . $customerIdStr;
     }
 
     /**
