@@ -118,7 +118,10 @@ class Index implements HttpPostActionInterface
 
         $resultJson = $this->resultFactory->create(ResultFactory::TYPE_JSON);
         $jsonConfigLanguage = $this->helper->getConfigLanguage();
-        if ($jsonConfigLanguage) {
+        $preferredLanguage = $this->helper->getPreferredLanguage();
+        if ($preferredLanguage) {
+            $lang = $preferredLanguage;
+        } elseif ($jsonConfigLanguage) {
             $lang = $this->store->getLocale() ?? "";
             $configLanguage = $this->serializer->unserialize($jsonConfigLanguage);
             $config = stristr($lang, "_", true);

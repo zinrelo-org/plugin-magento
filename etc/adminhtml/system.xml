@@ -176,6 +176,18 @@
                     <comment>Value Pass Like : {"fr": "french", "es": "spanish", "hi": "custom language one"}</comment>
                 </field>
 
+                <field id="preferred_language" showInDefault="1" showInStore="1" showInWebsite="1" sortOrder="50" translate="label" type="select">
+                    <label>Preferred Language</label>
+                    <comment>
+                        <![CDATA[
+                            Select the preferred language from the available ones in TrueLoyal. This language will be used in the customer's EUD.<br>
+                            Make sure the Rewards and Activities are translated into this language.<br>
+                            This field is optional. If not selected, the preferred language will be the default one in TrueLoyal.
+                        ]]>
+                    </comment>
+                    <source_model>TrueLoyal\LoyaltyRewards\Model\System\Config\PreferredLanguage</source_model>
+                </field>
+
                 <field id="member_identifier_prefix" showInDefault="1" showInStore="1" showInWebsite="1" sortOrder="74" translate="label" type="text">
                     <label>Member Identifier Prefix</label>
                     <comment>This field is optional.</comment>

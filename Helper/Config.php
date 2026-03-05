@@ -72,6 +72,7 @@ class Config extends AbstractHelper
     public const XML_PATH_MEMBER_IDENTIFIER = 'trueloyal_loyaltyRewards/settings/member_identifier';
     public const XML_PATH_CUSTOM_MEMBER_STORE_ID = 'trueloyal_loyaltyRewards/settings/custom_member_attributes/store_id';
     public const XML_PATH_CUSTOM_MEMBER_STORE_CURRENCY = 'trueloyal_loyaltyRewards/settings/custom_member_attributes/store_currency';
+    public const XML_PATH_PREFERRED_LANGUAGE = 'trueloyal_loyaltyRewards/settings/preferred_language';
 
     /**
      * Cookie life time
@@ -304,6 +305,11 @@ class Config extends AbstractHelper
     public function getConfigLanguage()
     {
         return $this->getConfig(self::XML_PATH_LANGUAGES);
+    }
+
+    public function getPreferredLanguage(): string
+    {
+        return $this->getConfig(self::XML_PATH_PREFERRED_LANGUAGE) ?? '';
     }
 
     /**
