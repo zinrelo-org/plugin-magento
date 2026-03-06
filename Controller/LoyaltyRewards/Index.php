@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * This controller is used no more. The JWT token generation was moved to Block/Dashboard.php
+ */
+
 namespace TrueLoyal\LoyaltyRewards\Controller\LoyaltyRewards;
 
 use Firebase\JWT\JWT;

@@ -4,6 +4,10 @@ if (!$isEnabled) {
     return;
 }
 $partnerId = $block->getPartnerId();
+$jwtToken = $block->getJwtToken();
+if (!$jwtToken) {
+    return;
+}
 ?>
 <script>
     require.config({
@@ -14,44 +18,13 @@ $partnerId = $block->getPartnerId();
         }
     });
 
-    require([
-            'jquery',
-            'trueloyal',
-            'js-cookie/cookie-wrapper'
-        ],
-        function ($, trueloyal,) {
-            $(document).ready(function () {
-                // Your AJAX request code here
-                let url = window.BASE_URL + "loyaltyRewards/loyaltyrewards/index";
-                let isRequest = $.cookie('trueloyal');
-                if (!isRequest | undefined) {
-                    $.ajax({
-                        url: url, // Adjust the URL as needed
-                        type: 'POST',
-                        dataType: 'json',
-                        cache: false,
-                        success: function (response) {
-                            let init_data = {
-                                "partner_id": response.partnerId,
-                                "jwt_token": response.tokenData,
-                                "version": "v2",
-                                "server": "https://app.trueloyal.com"
-                            };
-                            _zrl.push(['init', init_data]);
-                        },
-                        error: function () {
-                            console.error('AJAX request failed.');
-                        }
-                    });
-                } else {
-                    let init_data = {
-                        "partner_id": "<?= /* @noEscape */ $partnerId ?>",
-                        "jwt_token": isRequest,
-                        "version": "v2",
-                        "server": "https://app.trueloyal.com"
-                    };
-                    _zrl.push(['init', init_data]);
-                }
-            });
-        });
+    require(['trueloyal'], function () {
+        let init_data = {
+            "partner_id": "<?= /* @noEscape */ $partnerId ?>",
+            "jwt_token": "<?= $block->escapeJs($jwtToken) ?>",
+            "version": "v2",
+            "server": "https://app.trueloyal.com"
+        };
+        _zrl.push(['init', init_data]);
+    });
 </script>
