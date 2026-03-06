@@ -70,6 +70,7 @@ class Config extends AbstractHelper
     public const XML_PATH_OPT_IN_FIELD_NAME = 'trueloyal_loyaltyRewards/settings/opt_in_field_name';
     public const XML_PATH_MEMBER_IDENTIFIER_PREFIX = 'trueloyal_loyaltyRewards/settings/member_identifier_prefix';
     public const XML_PATH_MEMBER_IDENTIFIER = 'trueloyal_loyaltyRewards/settings/member_identifier';
+    public const XML_PATH_CUSTOM_MEMBER_STORE_CODE = 'trueloyal_loyaltyRewards/settings/custom_member_attributes/store_code';
     public const XML_PATH_CUSTOM_MEMBER_STORE_ID = 'trueloyal_loyaltyRewards/settings/custom_member_attributes/store_id';
     public const XML_PATH_CUSTOM_MEMBER_STORE_CURRENCY = 'trueloyal_loyaltyRewards/settings/custom_member_attributes/store_currency';
     public const XML_PATH_PREFERRED_LANGUAGE = 'trueloyal_loyaltyRewards/settings/preferred_language';
@@ -774,6 +775,11 @@ class Config extends AbstractHelper
      *
      * @return string
      */
+    public function getCustomMemberStoreCode(): string
+    {
+        return $this->getConfig(self::XML_PATH_CUSTOM_MEMBER_STORE_CODE) ?? '';
+    }
+
     public function getCustomMemberStoreId(): string
     {
         return $this->getConfig(self::XML_PATH_CUSTOM_MEMBER_STORE_ID) ?? '';

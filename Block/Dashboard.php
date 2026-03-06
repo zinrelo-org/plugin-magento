@@ -189,9 +189,13 @@ class Dashboard extends Template
 
         $customAttributes = [];
         $customStoreIdKey = $this->config->getCustomMemberStoreId();
+        $customStoreCodeKey = $this->config->getCustomMemberStoreCode();
         $customStoreCurrencyKey = $this->config->getCustomMemberStoreCurrency();
         if ($customStoreIdKey) {
             $customAttributes[$customStoreIdKey] = $storeId;
+        }
+        if ($customStoreCodeKey) {
+            $customAttributes[$customStoreCodeKey] = $this->_storeManager->getStore()->getCode();
         }
         if ($customStoreCurrencyKey) {
             $customAttributes[$customStoreCurrencyKey] = $storeCurrency;

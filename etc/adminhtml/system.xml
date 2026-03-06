@@ -211,7 +211,10 @@
                     <field id="store_id" showInDefault="1" showInStore="1" showInWebsite="1" sortOrder="10" translate="label" type="text">
                         <label>Store ID</label>
                     </field>
-                    <field id="store_currency" showInDefault="1" showInStore="1" showInWebsite="1" sortOrder="20" translate="label" type="text">
+                    <field id="store_code" showInDefault="1" showInStore="1" showInWebsite="1" sortOrder="20" translate="label" type="text">
+                        <label>Store Code</label>
+                    </field>
+                    <field id="store_currency" showInDefault="1" showInStore="1" showInWebsite="1" sortOrder="30" translate="label" type="text">
                         <label>Store Currency</label>
                     </field>
                 </group>
