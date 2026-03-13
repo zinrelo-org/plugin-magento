@@ -136,8 +136,6 @@ class Dashboard extends Template
         $country = "";
         $telephone = "";
         $lang = "";
-        $storeId = "";
-        $storeCurrency = "";
         $memberIdentifierValue = "";
 
         $jsonConfigLanguage = $this->config->getConfigLanguage();
@@ -182,8 +180,6 @@ class Dashboard extends Template
             $country = isset($billingAddress['country_id'])
                 ? $this->getCountryName($billingAddress['country_id'])
                 : "";
-            $storeId = (string)$customer->getStoreId();
-            $storeCurrency = $this->config->getStoreCurrencyCode();
             $memberIdentifierValue = $this->config->getMemberIdentifierValue();
         }
 
@@ -192,13 +188,13 @@ class Dashboard extends Template
         $customStoreCodeKey = $this->config->getCustomMemberStoreCode();
         $customStoreCurrencyKey = $this->config->getCustomMemberStoreCurrency();
         if ($customStoreIdKey) {
-            $customAttributes[$customStoreIdKey] = $storeId;
+            $customAttributes[$customStoreIdKey] = $this->_storeManager->getGroup()->getId();
         }
         if ($customStoreCodeKey) {
-            $customAttributes[$customStoreCodeKey] = $this->_storeManager->getStore()->getCode();
+            $customAttributes[$customStoreCodeKey] = $this->_storeManager->getGroup()->getCode();
         }
         if ($customStoreCurrencyKey) {
-            $customAttributes[$customStoreCurrencyKey] = $storeCurrency;
+            $customAttributes[$customStoreCurrencyKey] = $this->config->getStoreCurrencyCode();
         }
 
         $payload = [

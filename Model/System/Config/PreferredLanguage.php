@@ -12,7 +12,7 @@ class PreferredLanguage implements OptionSourceInterface
     public function toOptionArray(): array
     {
         return [
-            ['value' => '',                      'label' => __('')],
+            ['value' => '',                      'label' => __(' ')],
             ['value' => 'english',               'label' => __('English')],
             ['value' => 'arabic',                'label' => __('Arabic')],
             ['value' => 'french',                'label' => __('French')],
