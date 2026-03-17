@@ -384,7 +384,7 @@ class Config extends AbstractHelper
         }
 
         $body = [
-            "integration_type" => "magento_to_trueloyal",
+            "integration_type" => "magento_to_zinrelo",
             "config" => [
                 "secret_key" => $this->getApiKey(),
                 "events" => array_values($events)
