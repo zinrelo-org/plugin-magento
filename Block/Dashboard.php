@@ -173,7 +173,7 @@ class Dashboard extends Template
             $customerLastName = $customer->getLastname();
             $customerBirthDate = $customer->getDob();
             $pattern = '/(\d{4})-(\d{2})-(\d{2})/';
-            if (preg_match($pattern, $customerBirthDate)) {
+            if ($customerBirthDate && preg_match($pattern, $customerBirthDate)) {
                 $customerBirthDate = preg_replace($pattern, '$2/$3/$1', $customerBirthDate);
             }
             $telephone = $billingAddress['telephone'] ?? "";
